@@ -1,5 +1,5 @@
 # Aviation_Moving_Map_Display
-## PMD
+## PMD (projected map display)
 Ferranti: Display, Moving Map 
 
 Ref.No 3892/79850
@@ -8,17 +8,17 @@ NSN 6610-99-787-8922
 
 Fitted to Harrier aircraft ZD401:
 
-[photos](https://www.jetphotos.com/registration/ZD401)
+## Photos
 
-[photos](https://abpic.co.uk/pictures/registration/ZD401)
+[module images](./images)
+
+[harrier photos](https://www.jetphotos.com/registration/ZD401)
+
+[harrier photos](https://abpic.co.uk/pictures/registration/ZD401)
 
 [Harrier cockpit](https://4.bp.blogspot.com/_fhZZ63PRjhQ/TUsCl6HRGVI/AAAAAAAACPw/2A3Wuko7wsM/s1600/harrier4.jpg)
 
 ![overview](./images/overview.jpg)
-
-## Photos
-
-[images](./images)
 
 ![map-Newport](./images/Map_Newport.jpg)
 
@@ -26,7 +26,7 @@ Fitted to Harrier aircraft ZD401:
 
 [UK Latitude and Longitude Map](https://www.mapsofworld.com/lat_long/united-kingdom-lat-long.html)
 
-## More information on similar device:
+#### More information on similar device:
 
 Information supplied by Erik Baigar, Munich.
 
@@ -34,77 +34,24 @@ Information supplied by Erik Baigar, Munich.
 
 [website](http://www.baigar.de/TornadoComputerUnit/TimeLine.html)
 
-## Rochester Aviation Archives
+#### Rochester Aviation Archives
 
 [PMD FILM TRACTION AND LAMP MODULES](https://rochesteravionicarchives.co.uk/collection/navigation-inertial/lamp-unit-and-film-carrier-unit)
 
 [PMD SCREEN MODULE](https://rochesteravionicarchives.co.uk/collection/mission-systems/screen-module)
 
-## UMMR museum
+#### UMMR museum
 
 [Projected map display](http://ummr.altervista.org/avionics.htm#PMDF)
 
 ## Connections
 
-### 66 pin 18B35P PMD connector
+#### 66 pin 18B35P PMD connector
 
 [Amphenol Connector 201-220-jt_series.pdf](./documents/201-220-jt_series.pdf) 
 
-![Connector](./images/connector.jpg)
-
-<br>
-
-### !! Work in progress, liable to change !!
-
-<br>
-
-|Pin #|Alt #|Function  |Note          |
-|-----|-----|----------|------------  |
-| 3|  3  | 115VAC      |400Hz Power   |
-| 2|  2  | Neutral     |400Hz Return  |
-|26|  4  | +28V DC     |DC Power      |
-|27| 17  | +28V DC     |DC Power      |
-| ?|  1  | -ve         |DC Return     |
-|32| 32  | -ve         |DC Return     |
-|22|     | 11R to 32   |              |
-| ?| 48  | 26V 400Hz   |Reference     |
-| ?| 49  | 0V 400Hz    |Ref.return    |
-|54| 54  | a           |N/S-a         |
-|55| 55  | b           |N/S-b         |
-|56| 56  | common      |N/S-com       |
-|43| 43  | a           |Heading-a     |
-|44| 44  | b           |Heading-b     |
-|45| 45  | common      |Heading-com   |
-|64| 64  | X3 yellow   |Coarse-a      |
-|65| 65  | X3 red      |Coarse-b      |
-|66| 66  | X3 black    |Coarse-common |
-|59| 59  | a           |Medium-a      |
-|60| 60  | b           |Medium-b      |
-|61| 61  | common      |Medium-com    |
-|51| 51  | a           |Fine-a        |
-|52| 52  | b           |Fine-b        |
-|53| 53  | common      |Fine-com      |
-| 9|  9  | 0V          |Chassis       |
-|42| 42  |+28V DC      |Mains-on ip   |
-|16|     |728k to -ve  |              |
-|34|     |9.5k to -ve  |              |
-|35|     |9.1k to -ve  |              |
-|36|     |9.1k to -ve  |              |
-|37|     |9.1k to -ve  |              |
-|38|     |9.3k to -ve  |              |
-| 6,7,8||n/c|
-|12,13,14||n/c||
-|19,20,39||n/c||
-|57,58||n/c||
-|62,63||n/c||
-
-<br>
-
-### 66 pin PMD connector
-
 ![18B35P](./images/66pin-18B35P-connector.png)
 
-### All 66 pins
 
  * Note: Connections marked n/c have no wires connected to plug
  * Note: pins without comment have unknown purpose
