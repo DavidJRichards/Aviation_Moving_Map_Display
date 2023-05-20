@@ -40,6 +40,8 @@ Information supplied by Erik Baigar, Munich.
 
 [PMD SCREEN MODULE](https://rochesteravionicarchives.co.uk/collection/mission-systems/screen-module)
 
+[SET OF PCBS FROM TORNADO PMD TEST SET](https://rochesteravionicarchives.co.uk/collection/mission-systems/set-of-pcb-from-tornado-pmd)
+
 #### UMMR museum
 
 [Projected map display](http://ummr.altervista.org/avionics.htm#PMDF)
@@ -76,7 +78,7 @@ Information supplied by Erik Baigar, Munich.
 |13||n/c||
 |14||n/c||
 |15||||
-|16|     |728k to -ve  |              |
+|16|     |728k to -ve  |+ve relay? ip|
 |17||||
 |18||||
 |19||n/c||
@@ -99,11 +101,11 @@ Information supplied by Erik Baigar, Munich.
 
 |Pin #|Alt #|Function  |Note          |
 |-----|-----|----------|------------  |
-|34|     |9.5k to -ve  |              |
-|35|     |9.1k to -ve  |              |
-|36|     |9.1k to -ve  |              |
-|37|     |9.1k to -ve  |              |
-|38|     |9.3k to -ve  |              |
+|34|     |9.5k to -ve  |switch status?|
+|35|     |9.1k to -ve  |switch status?|
+|36|     |9.1k to -ve  |switch status?|
+|37|     |9.1k to -ve  |switch status?|
+|38|     |9.3k to -ve  |switch status?|
 |39||n/c||
 |40||235R to 41||
 |41||235R to 40||
@@ -113,8 +115,8 @@ Information supplied by Erik Baigar, Munich.
 |45| 45  | common      |Heading-com   |
 |46||||
 |47||||
-| ?| 48  | 26V 400Hz   |Reference     |
-| ?| 49  | 0V 400Hz    |Ref.return    |
+|48| 48  | 26V 400Hz   |Reference     |
+|49| 49  | 0V 400Hz    |Ref.return    |
 |50||||
 |51| 51  | a           |Fine-a        |
 |52| 52  | b           |Fine-b        |
@@ -132,4 +134,20 @@ Information supplied by Erik Baigar, Munich.
 |64| 64  | X3 yellow   |Coarse-a      |
 |65| 65  | X3 red      |Coarse-b      |
 |66| 66  | X3 black    |Coarse-com    |
+
+## Circuit boards
+
+[boards photo](https://cdn.rochesteravionicarchives.co.uk/img/catalog/C1774_%28pcbs_small%29_.jpg?w=1500&fit=max)
+
+<br>
+
+|No|Name|Position|
+|--|----|--------|
+|5|AMPLIFIER, ERROR (Y-0)|Bottom|
+|6|DRIVER, LAMP CHANGER|Bottom|
+|7|AMPLIFIER, ERROR X|Top|
+|8|AMPLIFIER, ELECTRONIC CONTROL|Top|
+|9|AMPLIFIER, ED (OUTPUT)|Side|
+
+* Note: 10, 11, 12 not fitted
 
