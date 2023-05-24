@@ -101,11 +101,11 @@ Information supplied by Erik Baigar, Munich.
 
 |Pin #|Alt #|Function  |Note          |
 |-----|-----|----------|------------  |
-|34|     |9.5k to -ve  |switch status?|
-|35|     |9.1k to -ve  |switch status?|
-|36|     |9.1k to -ve  |switch status?|
-|37|     |9.1k to -ve  |switch status?|
-|38|     |9.3k to -ve  |switch status?|
+|34|     |12 v op      |Scale switch-a|
+|35|     |12 v op      |Scale switch-b|
+|36|     |12 v op   |Function switch-a|
+|37|     |12 v op   |Function switch-b|
+|38|     |12 v op   |Function switch-c|
 |39||n/c||
 |40||235R to 41||
 |41||235R to 40||
@@ -143,11 +143,48 @@ Information supplied by Erik Baigar, Munich.
 
 |No|Name|Position|
 |--|----|--------|
-|5|AMPLIFIER, ERROR (Y-0)|Bottom|
+|5|AMPLIFIER, ERROR (Y-Θ)|Bottom|
 |6|DRIVER, LAMP CHANGER|Bottom|
 |7|AMPLIFIER, ERROR X|Top|
 |8|AMPLIFIER, ELECTRONIC CONTROL|Top|
 |9|AMPLIFIER, ED (OUTPUT)|Side|
 
 * Note: 10, 11, 12 not fitted
+
+<br>
+
+|Pin #|Board 5|AMPLIFIER, ERROR (Y-Θ)|
+|-----|-------|----------------------|
+| 1, 2| +5 V  ||
+| 3, 4|  0 V  ||
+|31,32|Gnd?   ||
+|37,38|-16 V  ||
+|51,52|+16 V  ||
+|57   | 26 VAC|400 Hz Reference      |
+|  60 |  0 VAC|Reference return      |
+
+## Front panel switches
+
+<br>
+
+### Scale switch
+
+|Fn. |#34|#35|
+|----|---|---|
+|56-1| H | L |
+|28-1/2| L | H |
+|14-1/4| H | H |
+
+<br>
+
+### Function switch
+
+|Fn.|#36|#37|#38|
+|---|---|---|---|
+|off| L | L | L |
+| N | H | L | L |
+|TRK| L | L | L |
+|DEC| H | H | L |
+| e | L | H | H |
+| f | L | L | H |
 
