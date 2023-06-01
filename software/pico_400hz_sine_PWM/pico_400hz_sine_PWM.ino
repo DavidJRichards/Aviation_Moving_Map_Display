@@ -14,19 +14,16 @@
 // These define's must be placed at the beginning before #include "TimerInterrupt_Generic.h"
 // _TIMERINTERRUPT_LOGLEVEL_ from 0 to 4
 // Don't define _TIMERINTERRUPT_LOGLEVEL_ > 0. Only for special ISR debugging only. Can hang the system.
-#define TIMER_INTERRUPT_DEBUG         0
+#define TIMER_INTERRUPT_DEBUG         2
 #define _TIMERINTERRUPT_LOGLEVEL_     4
 
 // Can be included as many times as necessary, without `Multiple Definitions` Linker Error
 #include "RPi_Pico_TimerInterrupt.h"
 #include <math.h>
 
-#ifndef LED_BUILTIN
-  #define LED_BUILTIN       25
-#endif
-
-#define PIN_T0              4         // Pin D1 mapped to pin GPIO1 of RPI_PICO
-#define PIN_T1              2         // Pin D1 mapped to pin GPIO1 of RPI_PICO
+#include <CommandParser.h>
+typedef CommandParser<> MyCommandParser;
+MyCommandParser parser;
 
 // This example to demo the new function setPWM_manual(uint8_t pin, uint16_t top, uint8_t div, uint16_t level, bool phaseCorrect = false)
 // used to generate a waveform. Check https://github.com/khoih-prog/RP2040_PWM/issues/6
@@ -56,22 +53,38 @@
 #define LED_OFF       HIGH
 
 #define pinLed        25    // On-board BUILTIN_LED
-#define pin4          0     // PWM channel 0A
-#define pin1          2     // PWM channel 1A
-#define pin2          4     // PWM channel 2A
-#define pin3          6     // PWM channel 3A
-#define pin0          16    // PWM channel 4B
-#define pin5          10    // PWM channel 5A
-#define pin11         11    // PWM channel 5B
-#define pin6          12    // PWM channel 6A
-#define pin7          14    // PWM channel 7A
+#define pinOpSync     7    // 
+#define pinIpTrig     5 
+
+#define ButtonA       12    // PWM 6A
+#define ButtonB       13    // PWM 6B
+#define ButtonX       14    // PWM 7A
+#define ButtonY       15    // PWM 7B
+
+#define pin1          0     // PWM channel 0A
+//#define pin2          1     // PWM channel 0B
+#define pin4          2     // PWM channel 1A
+//#define pin5          3     // PWM channel 1B
+#define pin6          4     // PWM channel 2A
+//#define pin7          5     // PWM channel 2B
+#define pin9          6     // PWM channel 3A
+//#define pin10         7     // PWM channel 3B
+#define pin11         8     // PWM channel 4A (mot1-)
+//#define pin12         9     // PWM channel 4B (mot1+)
+#define pin14         10    // PWM channel 5A (mot2-)
+//#define pin15         11    // PWM channel 5B (mot2+)
+//#define pin16         12    // PWM channel 6A (button A)
+//#define pin17         13    // PWM channel 6B (button B)
+#define pin34         28    // PWM channel 6A 
+//#define pin19         14    // PWM channel 7A
+//#define pin20         15    // PWM channel 7B
 
 
-uint32_t PWM_Pins[]     = { 0, 1, 6, 7, 16, 19, 5 };
+uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, /*8, 10,*/ 28 };
 
 #define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
 
-float dutyCycle[NUM_OF_PINS]  = { 50.0f, 50.0f, 50.0f, 50.0f, 50.0f, 50.0f, 50.0f };
+float dutyCycle = 50.0f;
 
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
@@ -107,7 +120,7 @@ float frequency;
 // You can select any value
 uint16_t PWM_data_idle = 124;
 
-#define TIMER0_INTERVAL            48 //39
+#define TIMER0_INTERVAL            78 //39
 
 // Init RPI_PICO_Timer, can use any from 0-15 pseudo-hardware timers
 RPI_PICO_Timer ITimer0(0);
@@ -115,45 +128,59 @@ RPI_PICO_Timer ITimer0(0);
 
 
 char dashLine[] = "=============================================================";
-static int step256 = 0;
 
+static int step256 = 0;
 float target = 3.0;
 float scale1;
 float scale2;
+float scale3;
+float scale4;
+float scale5;
+float scale6;
 float level1;
 float level2;
+float level3;
+float level4;
+float level5;
+float level6;
 float test;
 
 
 bool TimerHandler0(struct repeating_timer *t)
 { 
   (void) t;
-  
-  static bool toggle0 = false;
-  step256+=5;
+  float temp;
+//  static bool toggle0 = false;
+  step256+=8;
   if(step256  > 255) step256 = 0; // should be >255, kludge to trim frequency to 400 Hz
 // center resultant waveform around 50% PWM full scale is 100.0 * ( sine256[step256%256] / 256.0f )
-//#if 0
-  test = 100.0 * ( sine256[step256%256] / 256.0f );
-//#else  
-  level1 = ( 50.0 - scale1 ) + ( 2 * scale1 ) * ( sine256[step256%256] / 256.0f );
-//#endif  
-  level2 = ( 50.0 - scale2 ) + ( 2 * scale2 ) * ( sine256[step256%256] / 256.0f );
 
-  //timer interrupt toggles pin LED_BUILTIN
-  digitalWrite(PIN_T0, toggle0);
-  toggle0 = !toggle0;
+  temp = ( sine256[step256%256] / 256.0f );
 
-  digitalWrite(PIN_T1,step256==0);
-  //uint16_t level2=1000/256*sine256[(index+80)%256];
-
+  level1 = ( 50.0 - scale1 ) + ( 2 * scale1 ) * temp;
+  level2 = ( 50.0 - scale2 ) + ( 2 * scale2 ) * temp;
   PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], level1);
   PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], level2);
-  PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], level1);
-  PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], level2);
-  PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], level1);
-  PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], level2);
+
+  level3 = ( 50.0 - scale3 ) + ( 2 * scale3 ) * temp;
+  level4 = ( 50.0 - scale4 ) + ( 2 * scale4 ) * temp;
+  PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], level3);
+  PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], level4);
+
+  level5 = ( 50.0 - scale5 ) + ( 2 * scale5 ) * temp;
+  level6 = ( 50.0 - scale6 ) + ( 2 * scale6 ) * temp;
+  PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], level5);
+  PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], level6);
+
+  test = 100.0 * temp;
   PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], test);
+
+  //timer interrupt toggles pin LED_BUILTIN
+  //digitalWrite(PIN_T0, toggle0);
+  //toggle0 = !toggle0;
+
+  digitalWrite(pinOpSync,step256==0);
+  //uint16_t level2=1000/256*sine256[(index+80)%256];
 
   return true;
 }
@@ -169,28 +196,118 @@ void buttonPressed() {
 //  buttonTime = millis();
 }
 
+void cmd_test(MyCommandParser::Argument *args, char *response) {
+  Serial.print("string: "); Serial.println(args[0].asString);
+  Serial.print("double: "); Serial.println(args[1].asDouble);
+  Serial.print("int64: "); Serial.println((int32_t)args[2].asInt64); // NOTE: on older AVR-based boards, Serial doesn't support printing 64-bit values, so we'll cast it down to 32-bit
+  Serial.print("uint64: "); Serial.println((uint32_t)args[3].asUInt64); // NOTE: on older AVR-based boards, Serial doesn't support printing 64-bit values, so we'll cast it down to 32-bit
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
+void cmd_target(MyCommandParser::Argument *args, char *response) {
+  float angle;
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  angle = args[0].asDouble;
+  target = fmod(angle, 360) * M_PI/180.0;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+  scale1=(sin(target)*50.0);
+  scale2=(cos(target)*50.0);
+
+//  Serial.println();
+  Serial.print("Angle: ");
+  Serial.print(angle);
+  Serial.print(", Scales: ");
+  Serial.print(scale1);
+  Serial.print(", ");
+  Serial.print(scale2);
+  Serial.println();
+
+}
+
+void cmd_fin(MyCommandParser::Argument *args, char *response) {
+  float angle;
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  angle = args[0].asDouble;
+  target = fmod(angle, 360) * M_PI/180.0;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+  scale1=(sin(target)*50.0);
+  scale2=(cos(target)*50.0);
+
+//  Serial.println();
+  Serial.print("Fine angle: ");
+  Serial.print(angle);
+  Serial.print(", Scales: ");
+  Serial.print(scale1);
+  Serial.print(", ");
+  Serial.print(scale2);
+  Serial.println();
+
+}
+
+void cmd_med(MyCommandParser::Argument *args, char *response) {
+  float angle;
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  angle = args[0].asDouble;
+  target = fmod(angle, 360) * M_PI/180.0;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+  scale3=(sin(target)*50.0);
+  scale4=(cos(target)*50.0);
+
+//  Serial.println();
+  Serial.print("Medium angle: ");
+  Serial.print(angle);
+  Serial.print(", Scales: ");
+  Serial.print(scale3);
+  Serial.print(", ");
+  Serial.print(scale4);
+  Serial.println();
+
+}
+
+
+void cmd_coa(MyCommandParser::Argument *args, char *response) {
+  float angle;
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  angle = args[0].asDouble;
+  target = fmod(angle, 360) * M_PI/180.0;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+  scale5=(sin(target)*50.0);
+  scale6=(cos(target)*50.0);
+
+//  Serial.println();
+  Serial.print("Coarse angle: ");
+  Serial.print(angle);
+  Serial.print(", Scales: ");
+  Serial.print(scale5);
+  Serial.print(", ");
+  Serial.print(scale6);
+  Serial.println();
+
+}
+
+
 void setup()
 {
   Serial.begin(115200);
-
   while (!Serial && millis() < 5000);
-
   delay(100);
 
   Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
   Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
 
-
   Serial.print(F("\nStarting PWM_Waveform_Fast on "));
   Serial.println(BOARD_NAME);
   Serial.println(RP2040_PWM_VERSION);
 
-  pinMode(PIN_T0, OUTPUT);
-  pinMode(PIN_T1, OUTPUT);
-  pinMode( 1, OUTPUT);
-  pinMode(12, INPUT_PULLUP);
-  attachInterrupt(12, buttonPressed, RISING);
+  pinMode(pinOpSync, OUTPUT);
+
+  pinMode(pinIpTrig, INPUT_PULLUP);
+  attachInterrupt(pinIpTrig, buttonPressed, RISING);
   // can be CHANGE or LOW or RISING or FALLING or HIGH
 
   frequency = 1000;
@@ -202,9 +319,9 @@ void setup()
     Serial.print("\t");
     Serial.print(frequency);
     Serial.print("\t\t");
-    Serial.print(dutyCycle[index]);
+    Serial.print(dutyCycle);
 
-    PWM_Instance[index] = new RP2040_PWM(PWM_Pins[index], frequency, dutyCycle[index]);
+    PWM_Instance[index] = new RP2040_PWM(PWM_Pins[index], frequency, dutyCycle);
 
     if (PWM_Instance[index])
     {
@@ -223,7 +340,22 @@ void setup()
     {
       Serial.println();
     }
+
   }
+
+  Serial.println(dashLine);
+
+//  parser.registerCommand("TEST", "sdiu", &cmd_test);
+//  parser.registerCommand("fin", "d", &cmd_target);
+  parser.registerCommand("fin", "d", &cmd_fin);
+  parser.registerCommand("med", "d", &cmd_med);
+  parser.registerCommand("coa", "d", &cmd_coa);
+//  Serial.println("registered command: TEST <string> <double> <int64> <uint64>");
+//  Serial.println("example: TEST \"\\x41bc\\ndef\" -1.234e5 -123 123");
+  Serial.println("registered command: fin <double> ");
+  Serial.println("registered command: med <double> ");
+  Serial.println("registered command: coa <double> ");
+  Serial.println("to set resolver angles in degrees");
 
   Serial.println(dashLine);
 
@@ -237,15 +369,27 @@ void setup()
 
   Serial.println(dashLine);
 
-  target = 0.0;
+  target = 0.707107;
   scale1=(sin(target)*50.0);
   scale2=(cos(target)*50.0);
+  scale3=(sin(target)*50.0);
+  scale4=(cos(target)*50.0);
+  scale5=(sin(target)*50.0);
+  scale6=(cos(target)*50.0);
 
   Serial.println();
   Serial.print("Scales: ");
   Serial.print(scale1);
   Serial.print(", ");
   Serial.print(scale2);
+  Serial.print(", ");
+  Serial.print(scale3);
+  Serial.print(", ");
+  Serial.print(scale4);
+  Serial.print(", ");
+  Serial.print(scale5);
+  Serial.print(", ");
+  Serial.print(scale6);
   Serial.println();
  
 
@@ -266,31 +410,40 @@ void printPWMInfo(RP2040_PWM* PWM_Instance)
 void loop()
 {
   
-//  for (int index = 0; index < NUM_PWM_POINTS; index++)
   float angle;
-  for (angle = 0.0; angle < (2*M_PI); angle += 0.1)
+//  for (angle = 0.0; angle < (2*M_PI); angle += 0.1)
   {
-    if(buttonPress)
-    {
-      Serial.println(F("Button A Pressed"));
-      buttonPress= false;
-      break;
-    }
+
+  if (Serial.available()) {
+    char line[128];
+    size_t lineLength = Serial.readBytesUntil('\n', line, 127);
+    line[lineLength] = '\0';
+
+    char response[MyCommandParser::MAX_RESPONSE_SIZE];
+    parser.processCommand(line, response);
+    Serial.println(response);
+  }
+
+  if(buttonPress)
+  {
+    Serial.println(F("Button A Pressed"));
+    buttonPress= false;
+//    break;
+  }
 
     // Use at low freq to check
     printPWMInfo(PWM_Instance[0]);
     printPWMInfo(PWM_Instance[1]);
+#if 0
+    scale1=(sin(angle)*50.0);
+    scale2=(cos(angle)*50.0);
 
-  scale1=(sin(angle)*50.0);
-  scale2=(cos(angle)*50.0);
-  #if 0
-  Serial.println();
-  Serial.print("Scales: ");
-  Serial.print(scale1);
-  Serial.print(", ");
-  Serial.print(scale2);
-  Serial.println();
-  #endif
+    scale3=(sin(angle+1)*50.0);
+    scale4=(cos(angle+1)*50.0);
+
+    scale5=(sin(angle+2)*50.0);
+    scale6=(cos(angle+2)*50.0);
+#endif
     // delay something here between data
     delay(100);
   }
