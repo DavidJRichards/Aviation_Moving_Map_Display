@@ -46,6 +46,24 @@ Information supplied by Erik Baigar, Munich.
 
 [Projected map display](http://ummr.altervista.org/avionics.htm#PMDF)
 
+## Exercise software
+
+### Development of map transport exerciser using Raspberrypi Pico 2040 
+
+This is work in progress, initial version drives three pairs of sine/cosine outputs, angle set on serial command line
+
+Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
+
+|Command|
+|-------|
+|fin|
+|med|
+|cou|
+
+Next development will include display on screen of current settings and possibly button control.
+
+[Arduino sketch](./software/pico_400hz_sine_PWM/pico_400hz_sine_PWM.ino)
+
 ## Connections
 
 #### 66 pin 18B35P PMD connector
