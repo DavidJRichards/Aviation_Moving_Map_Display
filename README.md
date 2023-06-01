@@ -58,6 +58,7 @@ Information supplied by Erik Baigar, Munich.
  * Note: Connections marked n/c have no wires connected to plug
  * Note: pins without comment have unknown purpose
  * Note: Alt pins are equivalent functions on RPMD module
+ * Additional information supplied by Erik Baigar see: [http://www.baigar.de/TornadoComputerUnit/TimeLine.html#20130205](http://www.baigar.de/TornadoComputerUnit/TimeLine.html#20130205)
 
 <br>
 
@@ -72,7 +73,7 @@ Information supplied by Erik Baigar, Munich.
 |07||n/c|
 |08||n/c|
 |09|  9  | 0V          |Chassis       |
-|10||||
+|10|10||input DAY/NIGHT control |
 |11||||
 |12||n/c||
 |13||n/c||
@@ -84,7 +85,7 @@ Information supplied by Erik Baigar, Munich.
 |19||n/c||
 |20||n/c||
 |21||||
-|22|     | 11R to 32   |              |
+|22|     | 11R to 32 |V prop to I lamp|
 |23||||
 |24||||
 |25||||
@@ -92,7 +93,7 @@ Information supplied by Erik Baigar, Munich.
 |27| 17  | +28V DC     |DC Power      |
 |28||||
 |29||||
-|30||||
+|30|30||input to RPMD inhibiting map drive|
 |31||||
 |32| 32  | -ve         |DC Return     |
 |33||||
@@ -101,14 +102,14 @@ Information supplied by Erik Baigar, Munich.
 
 |Pin #|Alt #|Function  |Note          |
 |-----|-----|----------|------------  |
-|34|     |12 v op      |Scale switch-a|
-|35|     |12 v op      |Scale switch-b|
-|36|     |12 v op   |Function switch-a|
-|37|     |12 v op   |Function switch-b|
-|38|     |12 v op   |Function switch-c|
+|34| 34 |12 v op      |Scale switch-a|
+|35| 35 |12 v op      |Scale switch-b|
+|36| 36 |12 v op   |Function switch-a|
+|37| 37 |12 v op   |Function switch-b|
+|38| 38 |12 v op   |Function switch-c|
 |39||n/c||
-|40||235R to 41||
-|41||235R to 40||
+|40|40|235R to 41||STB Lamp when positive|
+|41|41|235R to 40||NTH UP lamp when positive|
 |42| 42  |+28V DC      |Mains-on ip   |
 |43| 43  | a           |Heading-a     |
 |44| 44  | b           |Heading-b     |
@@ -135,6 +136,8 @@ Information supplied by Erik Baigar, Munich.
 |65| 65  | X3 red      |Coarse-b      |
 |66| 66  | X3 black    |Coarse-com    |
 
+pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
+
 ## Circuit boards
 
 [boards photo](https://cdn.rochesteravionicarchives.co.uk/img/catalog/C1774_%28pcbs_small%29_.jpg?w=1500&fit=max)
@@ -147,7 +150,7 @@ Information supplied by Erik Baigar, Munich.
 |6|DRIVER, LAMP CHANGER|Bottom|
 |7|AMPLIFIER, ERROR X|Top|
 |8|AMPLIFIER, ELECTRONIC CONTROL|Top|
-|9|AMPLIFIER, ED (OUTPUT)|Side|
+|9|AMPLIFIER, EC (OUTPUT)|Side|
 
 * Note: 10, 11, 12 not fitted
 
