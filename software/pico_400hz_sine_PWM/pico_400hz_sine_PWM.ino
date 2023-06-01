@@ -21,9 +21,22 @@
 #include "RPi_Pico_TimerInterrupt.h"
 #include <math.h>
 
+#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
+#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <SPI.h>
+
 #include <CommandParser.h>
 typedef CommandParser<> MyCommandParser;
 MyCommandParser parser;
+
+#define TFT_CS        17
+#define TFT_RST       -1 // Or set to -1 and connect to Arduino RESET pin
+#define TFT_DC        16
+#define TFT_MOSI      19
+#define TFT_SCLK      18
+
+Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 // This example to demo the new function setPWM_manual(uint8_t pin, uint16_t top, uint8_t div, uint16_t level, bool phaseCorrect = false)
 // used to generate a waveform. Check https://github.com/khoih-prog/RP2040_PWM/issues/6
@@ -54,7 +67,7 @@ MyCommandParser parser;
 
 #define pinLed        25    // On-board BUILTIN_LED
 #define pinOpSync     7    // 
-#define pinIpTrig     5 
+#define pinIpTrig     ButtonA // or could be GP5
 
 #define ButtonA       12    // PWM 6A
 #define ButtonB       13    // PWM 6B
@@ -289,9 +302,60 @@ void cmd_coa(MyCommandParser::Argument *args, char *response) {
 
 }
 
+void tftPrintTest() {
+  float p = 3.1415926;
+  tft.setTextWrap(false);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setCursor(0, 30);
+  tft.setTextColor(ST77XX_RED);
+  tft.setTextSize(1);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_YELLOW);
+  tft.setTextSize(2);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(3);
+  tft.println("Hello World!");
+  tft.setTextColor(ST77XX_BLUE);
+  tft.setTextSize(4);
+  tft.print(1234.567);
+  tft.println();
+//  delay(1500);
+//  tft.setCursor(0, 0);
+//  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.setTextSize(0);
+  tft.println("Hello World!");
+  tft.setTextSize(1);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.print(p, 6);
+  tft.println(" Want pi?");
+  tft.println(" ");
+  tft.print(8675309, HEX); // print 8,675,309 out in HEX!
+  tft.println(" Print HEX!");
+  tft.println(" ");
+  tft.setTextColor(ST77XX_WHITE);
+  tft.println("Sketch has been");
+  tft.println("running for: ");
+  tft.setTextColor(ST77XX_MAGENTA);
+  tft.print(millis() / 1000);
+  tft.setTextColor(ST77XX_WHITE);
+  tft.print(" seconds.");
+}
+
 
 void setup()
 {
+  tft.init(240, 240);           // Init ST7789 240x240
+  tft.setRotation(2);
+  tft.setSPISpeed(40000000);
+  tft.fillScreen(ST77XX_BLACK);
+//  tftPrintTest();
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(3);
+  tft.println("Resolver PWM");
+
+
   Serial.begin(115200);
   while (!Serial && millis() < 5000);
   delay(100);
@@ -391,7 +455,8 @@ void setup()
   Serial.print(", ");
   Serial.print(scale6);
   Serial.println();
- 
+
+  tftPrintTest();
 
 }
 
