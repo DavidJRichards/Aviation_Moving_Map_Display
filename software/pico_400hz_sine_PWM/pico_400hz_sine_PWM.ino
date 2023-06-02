@@ -162,9 +162,9 @@ float level5;
 float level6;
 
 float test;
-int step=1;
+int step=5;
 int automatic=0;
-long absolute;
+long absolute=0;
 
 float angle0;
 float angle1;
@@ -308,6 +308,7 @@ void cmd_abs(MyCommandParser::Argument *args, char *response) {
   Serial.print("double: "); Serial.println(args[0].asDouble);
   absolute = args[0].asDouble;
   abs2res(absolute, &angle0, &angle1, &angle2);
+  anglesUpdate();
 #if 0
   tft.fillScreen(ST77XX_BLACK);
   tft.setTextColor(ST77XX_GREEN);
@@ -342,6 +343,22 @@ void cmd_automatic(MyCommandParser::Argument *args, char *response) {
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
+
+void anglesUpdate(void)
+{
+  target = fmod(angle0, 360) * M_PI/180.0;
+  scale1=(sin(target)*50.0);
+  scale2=(cos(target)*50.0);
+
+  target = fmod(angle1, 360) * M_PI/180.0;
+  scale3=(sin(target)*50.0);
+  scale4=(cos(target)*50.0);
+
+  target = fmod(angle2, 360) * M_PI/180.0;
+  scale5=(sin(target)*50.0);
+  scale6=(cos(target)*50.0);
+
+}
 
 void cmd_fin(MyCommandParser::Argument *args, char *response) {
   Serial.println();
@@ -544,6 +561,7 @@ void setup()
   Serial.println();
 
 //  tftPrintTest();
+  anglesUpdate();
   displayUpdate();
 
 }
@@ -579,6 +597,7 @@ void loop()
     buttonAPress= false;
     absolute += step;
     abs2res(absolute, &angle0, &angle1, &angle2);
+    anglesUpdate();
     displayUpdate();
   }
 
@@ -588,6 +607,7 @@ void loop()
     buttonBPress= false;
     absolute -= step;
     abs2res(absolute, &angle0, &angle1, &angle2);
+    anglesUpdate();
     displayUpdate();
   }
 
@@ -595,6 +615,7 @@ void loop()
   {
     absolute += step;   
     abs2res(absolute, &angle0, &angle1, &angle2); 
+    anglesUpdate();
 //    displayUpdate();
   }
 
