@@ -67,7 +67,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 #define pinLed        25    // On-board BUILTIN_LED
 #define pinOpSync     7    // 
-#define pinIpTrig     ButtonA // or could be GP5
+#define pinIpTrig     5
 
 #define ButtonA       12    // PWM 6A
 #define ButtonB       13    // PWM 6B
@@ -125,8 +125,10 @@ uint16_t sine256[]  = {
    37, 39, 42, 44, 46, 49, 51, 54, 56, 59, 62, 64, 67, 70, 73, 76, 78, 81, 84, 87, 90, 93, 96, 99,102,105,108,111,115,118,121,124
 
 };
-bool buttonPress = false;
-unsigned long buttonTime = 0; // To prevent debounce
+bool buttonAPress = false;
+bool buttonBPress = false;
+unsigned long buttonATime = 0; // To prevent debounce
+unsigned long buttonBTime = 0; // To prevent debounce
 
 float frequency;
 
@@ -144,19 +146,29 @@ char dashLine[] = "=============================================================
 
 static int step256 = 0;
 float target = 3.0;
+
 float scale1;
 float scale2;
 float scale3;
 float scale4;
 float scale5;
 float scale6;
+
 float level1;
 float level2;
 float level3;
 float level4;
 float level5;
 float level6;
+
 float test;
+int step=1;
+int automatic=0;
+long absolute;
+
+float angle0;
+float angle1;
+float angle2;
 
 
 bool TimerHandler0(struct repeating_timer *t)
@@ -198,17 +210,28 @@ bool TimerHandler0(struct repeating_timer *t)
   return true;
 }
 
-
-void buttonPressed() {
+void syncInput(void) {
   step256=0;
+}
+
+void buttonAPressed() {
   //Set timer to work for your loop code time   
 //  if (millis() - buttonTime > 250) {
     //button press ok
-    buttonPress= true;
+    buttonAPress= true;
+//  }
+//  buttonTime = millis();
+}
+void buttonBPressed() {
+  //Set timer to work for your loop code time   
+//  if (millis() - buttonTime > 250) {
+    //button press ok
+    buttonBPress= true;
 //  }
 //  buttonTime = millis();
 }
 
+#if 0
 void cmd_test(MyCommandParser::Argument *args, char *response) {
   Serial.print("string: "); Serial.println(args[0].asString);
   Serial.print("double: "); Serial.println(args[1].asDouble);
@@ -216,92 +239,145 @@ void cmd_test(MyCommandParser::Argument *args, char *response) {
   Serial.print("uint64: "); Serial.println((uint32_t)args[3].asUInt64); // NOTE: on older AVR-based boards, Serial doesn't support printing 64-bit values, so we'll cast it down to 32-bit
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
+#endif
 
-void cmd_target(MyCommandParser::Argument *args, char *response) {
-  float angle;
-  Serial.println();
-  Serial.print("double: "); Serial.println(args[0].asDouble);
-  angle = args[0].asDouble;
-  target = fmod(angle, 360) * M_PI/180.0;
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  scale1=(sin(target)*50.0);
-  scale2=(cos(target)*50.0);
+const int ratio1 = 30;
+const int ratio2 = ratio1*30;
+#define offset_coarse 0  // range on coarse is -90 to +90, so offset is +90 (to verify)
 
-//  Serial.println();
-  Serial.print("Angle: ");
-  Serial.print(angle);
-  Serial.print(", Scales: ");
-  Serial.print(scale1);
-  Serial.print(", ");
-  Serial.print(scale2);
-  Serial.println();
-
+unsigned long res2abs(int fine, int medium, int coarse)
+{
+        return (offset_coarse + coarse)*ratio2 + medium*ratio1 + fine;
 }
 
-void cmd_fin(MyCommandParser::Argument *args, char *response) {
-  float angle;
+void abs2res(long absolute, float *fine, float *medium, float *coarse)
+{
+        *coarse = (absolute / ratio2) - offset_coarse;
+        *medium = (absolute % ratio2)/ratio1;
+        *fine  =  absolute % ratio1;
+
+}        
+
+void  printDetails(const char * name, int index, float angle, float scaleA, float scaleB, float levelA, float levelB) 
+{
+#if 0  
+  Serial.println();
+  Serial.println(name);
+  Serial.print("Angle=");
+  Serial.println(angle);
+  Serial.print("Scale ");
+  Serial.print(scaleA);
+  Serial.print(", ");
+  Serial.println(scaleB);
+#endif
+
+  tft.setCursor(0, 0 + index * 55);
+  tft.println(name);
+  tft.print("Angle= ");
+  tft.println(angle);
+  tft.print("Scale ");
+  tft.print(scaleA);
+  tft.print(", ");
+  tft.println(scaleB);
+}
+
+void displayUpdate(void)
+{
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(2);
+  printDetails("Fine", 0, angle0, scale1, scale2, level1, level2); 
+  printDetails("Medium", 1, angle1, scale3, scale4, level3, level4); 
+  printDetails("Coarse", 2, angle2, scale5, scale6, level5, level6); 
+
+  absolute = res2abs(angle0, angle1, angle2);
+  tft.println();
+
+  tft.print("Absolute= ");
+  tft.println(absolute);
+
+  tft.print("Step= ");
+  tft.println(step);
+
+  tft.print("Automatic= ");
+  tft.println(automatic);
+}
+
+void cmd_abs(MyCommandParser::Argument *args, char *response) {
   Serial.println();
   Serial.print("double: "); Serial.println(args[0].asDouble);
-  angle = args[0].asDouble;
-  target = fmod(angle, 360) * M_PI/180.0;
+  absolute = args[0].asDouble;
+  abs2res(absolute, &angle0, &angle1, &angle2);
+#if 0
+  tft.fillScreen(ST77XX_BLACK);
+  tft.setTextColor(ST77XX_GREEN);
+  tft.setTextSize(2);
+  tft.setCursor(0, 0);
+  tft.print("Absolute= ");
+  tft.println(absolute_);
+
+  tft.print("Fine ");
+  tft.println(angle0);
+  tft.print("Medium ");
+  tft.println(angle1);
+  tft.print("Coarse ");
+  tft.println(angle2);
+#endif
+   displayUpdate();
+}
+
+void cmd_step(MyCommandParser::Argument *args, char *response) {
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  step = args[0].asDouble;
+  displayUpdate();
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
+void cmd_automatic(MyCommandParser::Argument *args, char *response) {
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  automatic = args[0].asDouble;
+  displayUpdate();
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
+
+void cmd_fin(MyCommandParser::Argument *args, char *response) {
+  Serial.println();
+  Serial.print("double: "); Serial.println(args[0].asDouble);
+  angle0 = args[0].asDouble;
+  target = fmod(angle0, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   scale1=(sin(target)*50.0);
   scale2=(cos(target)*50.0);
-
-//  Serial.println();
-  Serial.print("Fine angle: ");
-  Serial.print(angle);
-  Serial.print(", Scales: ");
-  Serial.print(scale1);
-  Serial.print(", ");
-  Serial.print(scale2);
-  Serial.println();
-
+  displayUpdate();
 }
 
 void cmd_med(MyCommandParser::Argument *args, char *response) {
-  float angle;
   Serial.println();
   Serial.print("double: "); Serial.println(args[0].asDouble);
-  angle = args[0].asDouble;
-  target = fmod(angle, 360) * M_PI/180.0;
+  angle1 = args[0].asDouble;
+  target = fmod(angle1, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   scale3=(sin(target)*50.0);
   scale4=(cos(target)*50.0);
-
-//  Serial.println();
-  Serial.print("Medium angle: ");
-  Serial.print(angle);
-  Serial.print(", Scales: ");
-  Serial.print(scale3);
-  Serial.print(", ");
-  Serial.print(scale4);
-  Serial.println();
-
+  displayUpdate();
 }
 
 
 void cmd_coa(MyCommandParser::Argument *args, char *response) {
-  float angle;
   Serial.println();
   Serial.print("double: "); Serial.println(args[0].asDouble);
-  angle = args[0].asDouble;
-  target = fmod(angle, 360) * M_PI/180.0;
+  angle2 = args[0].asDouble;
+  target = fmod(angle2, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   scale5=(sin(target)*50.0);
   scale6=(cos(target)*50.0);
-
-//  Serial.println();
-  Serial.print("Coarse angle: ");
-  Serial.print(angle);
-  Serial.print(", Scales: ");
-  Serial.print(scale5);
-  Serial.print(", ");
-  Serial.print(scale6);
-  Serial.println();
-
+  displayUpdate();
 }
 
+#if 0
 void tftPrintTest() {
   float p = 3.1415926;
   tft.setTextWrap(false);
@@ -342,7 +418,7 @@ void tftPrintTest() {
   tft.setTextColor(ST77XX_WHITE);
   tft.print(" seconds.");
 }
-
+#endif
 
 void setup()
 {
@@ -371,7 +447,12 @@ void setup()
   pinMode(pinOpSync, OUTPUT);
 
   pinMode(pinIpTrig, INPUT_PULLUP);
-  attachInterrupt(pinIpTrig, buttonPressed, RISING);
+  pinMode(ButtonA, INPUT_PULLUP);
+  pinMode(ButtonB, INPUT_PULLUP);
+  pinMode(ButtonX, INPUT_PULLUP);
+  attachInterrupt(pinIpTrig, syncInput, RISING);
+  attachInterrupt(ButtonA, buttonAPressed, RISING);
+  attachInterrupt(ButtonB, buttonBPressed, RISING);
   // can be CHANGE or LOW or RISING or FALLING or HIGH
 
   frequency = 1000;
@@ -414,11 +495,17 @@ void setup()
   parser.registerCommand("fin", "d", &cmd_fin);
   parser.registerCommand("med", "d", &cmd_med);
   parser.registerCommand("coa", "d", &cmd_coa);
+  parser.registerCommand("abs", "d", &cmd_abs);
+  parser.registerCommand("step", "d", &cmd_step);
+  parser.registerCommand("automatic", "d", &cmd_automatic);
 //  Serial.println("registered command: TEST <string> <double> <int64> <uint64>");
 //  Serial.println("example: TEST \"\\x41bc\\ndef\" -1.234e5 -123 123");
   Serial.println("registered command: fin <double> ");
   Serial.println("registered command: med <double> ");
   Serial.println("registered command: coa <double> ");
+  Serial.println("registered command: abs <double> ");
+  Serial.println("registered command: step <double> ");
+  Serial.println("registered command: automatic <double> ");
   Serial.println("to set resolver angles in degrees");
 
   Serial.println(dashLine);
@@ -456,7 +543,8 @@ void setup()
   Serial.print(scale6);
   Serial.println();
 
-  tftPrintTest();
+//  tftPrintTest();
+  displayUpdate();
 
 }
 
@@ -475,10 +563,6 @@ void printPWMInfo(RP2040_PWM* PWM_Instance)
 void loop()
 {
   
-  float angle;
-//  for (angle = 0.0; angle < (2*M_PI); angle += 0.1)
-  {
-
   if (Serial.available()) {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
@@ -489,27 +573,37 @@ void loop()
     Serial.println(response);
   }
 
-  if(buttonPress)
+  if(buttonAPress)
   {
-    Serial.println(F("Button A Pressed"));
-    buttonPress= false;
-//    break;
+  //  Serial.println(F("Button A Pressed"));
+    buttonAPress= false;
+    absolute += step;
+    abs2res(absolute, &angle0, &angle1, &angle2);
+    displayUpdate();
   }
 
-    // Use at low freq to check
-    printPWMInfo(PWM_Instance[0]);
-    printPWMInfo(PWM_Instance[1]);
-#if 0
-    scale1=(sin(angle)*50.0);
-    scale2=(cos(angle)*50.0);
-
-    scale3=(sin(angle+1)*50.0);
-    scale4=(cos(angle+1)*50.0);
-
-    scale5=(sin(angle+2)*50.0);
-    scale6=(cos(angle+2)*50.0);
-#endif
-    // delay something here between data
-    delay(100);
+  if(buttonBPress)
+  {
+  //  Serial.println(F("Button B Pressed"));
+    buttonBPress= false;
+    absolute -= step;
+    abs2res(absolute, &angle0, &angle1, &angle2);
+    displayUpdate();
   }
+
+  if(automatic)
+  {
+    absolute += step;   
+    abs2res(absolute, &angle0, &angle1, &angle2); 
+//    displayUpdate();
+  }
+
+  delay(100);
+
+
+  // Use at low freq to check
+  printPWMInfo(PWM_Instance[0]);
+  printPWMInfo(PWM_Instance[1]);
+  // delay something here between data
+  
 }
