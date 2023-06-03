@@ -52,17 +52,88 @@ Information supplied by Erik Baigar, Munich.
 
 This is work in progress, initial version drives three pairs of sine/cosine outputs, angle set on serial command line
 
+The serial console is used with a command interpreter to change the settings for test purposes. Console is accesed by USB at 115200 bps with a terminal program or the arduino IDE.
+
 Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
 
-|Command|
-|-------|
-|fin|
-|med|
-|cou|
+|Command||
+|-------|-|
+|fin|Fine angle|
+|med|Medium angle|
+|cou|Coarse angle|
+|abs|Absolute index|
+|step|index step|
+|automatic|Automatic increment|
 
-Next development will include display on screen of current settings and possibly button control.
+ * A non-zero value in automatic starts the automatic absolute change cycle
+ * Press of button A incremets the absolute position by the step value
+ * Press of button B decrements the absolute index by the step value
+
+#### Status display with buttons
+
+![LCD status](./images/LCD_status.jpg)
 
 [Arduino sketch](./software/pico_400hz_sine_PWM/pico_400hz_sine_PWM.ino)
+<br>
+#### Absolute transport position encoding
+
+
+
+|Absolute|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
+|--------|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
+|Fine    |  |  |  |  |  |  |  |  |  |  |  |  |07|06|05|04|03|02|01|00|
+|Medium  |  |  |  |  |  |  |  |07|06|05|04|03|02|01|00|  |  |  |  |  |
+|Coarse  |  |  |07|06|05|04|03|02|01|00|  |  |  |  |  |  |  |  |  |  |
+
+<br>
+##### Absolute to resolver conversion
+
+```
+const int ratio1 = 30;
+const int ratio2 = ratio1*30;
+
+void abs2res(long absolute, float *fine, float *medium, float *coarse)
+{
+        *coarse = (absolute / ratio2) - offset_coarse;
+        *medium = (absolute / ratio1) % 360;
+        *fine  =   absolute           % 360;
+
+}
+```
+
+##### Resolver to absolute conversion
+
+```
+const int ratio1 = 30;
+const int ratio2 = ratio1*30;
+
+unsigned long res2abs(int fine, int medium, int coarse)
+{
+    return (fine % ratio1)     
+    + (ratio1 * (medium % ratio1))   
+    + (ratio2 * (coarse % ratio2));
+}
+```
+
+#### Wiring
+
+A 400Hz 24 VAC reference signal from the module power supply is attenuated and clipped before being fed into an input of the pico, this is used to synchronise the generated waveforms to the reference . The input is fed through 10K resistor with a diode to ground in parallel with a 1K restor.
+
+The PWM outputs are fed through a RC filter to form the analogue resolver signals. each channel is red through a 1K resistor and has a 100nF capacator to ground.
+
+Each pair of resolver signals is fed to a dual LM1875 amlifier to drive the module inputs. The amplifier gain is adjusted to give the required output level by tweaking its feedback resitor. (10K in parallel with existing 20k resistor)
+
+A reference 400Hz is availabe on a seventh channel (unused)
+
+A Reference pulse output is available to trigger the oscilloscope.
+
+![breadboard](./images/breadboard.jpg)
+
+![oscilloscope](./images/oscilloscope.jpg)
+
+![amplifier](./images/amplifier.jpg)
+
+[representive LM1875 schematic](https://www.circuitbasics.com/audio-amplifiers/)
 
 ## Connections
 

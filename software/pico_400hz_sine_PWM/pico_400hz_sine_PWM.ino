@@ -247,14 +247,17 @@ const int ratio2 = ratio1*30;
 
 unsigned long res2abs(int fine, int medium, int coarse)
 {
-        return (offset_coarse + coarse)*ratio2 + medium*ratio1 + fine;
+// use top bits of each resolver, get bottom bits from next in chain  
+    return      (fine   % ratio1)     
+    + (ratio1 * (medium % ratio1))   
+    + (ratio2 * (coarse % ratio2));
 }
 
 void abs2res(long absolute, float *fine, float *medium, float *coarse)
 {
         *coarse = (absolute / ratio2) - offset_coarse;
-        *medium = (absolute % ratio2)/ratio1;
-        *fine  =  absolute % ratio1;
+        *medium = (absolute / ratio1) % 360;
+        *fine  =   absolute           % 360;
 
 }        
 
