@@ -162,7 +162,7 @@ float level5;
 float level6;
 
 float test;
-int step=5;
+int step=10;
 int automatic=0;
 long absolute=0;
 
@@ -470,7 +470,8 @@ void setup()
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
-  attachInterrupt(pinIpTrig, syncInput, RISING);
+//  attachInterrupt(pinIpTrig, syncInput, RISING);
+  attachInterrupt(pinIpTrig, syncInput, FALLING);
   attachInterrupt(ButtonA, buttonAPressed, RISING);
   attachInterrupt(ButtonB, buttonBPressed, RISING);
   // can be CHANGE or LOW or RISING or FALLING or HIGH
@@ -598,9 +599,10 @@ void loop()
   {
   //  Serial.println(F("Button A Pressed"));
     buttonAPress= false;
-    absolute += step;
-    abs2res(absolute, &angle0, &angle1, &angle2);
-    anglesUpdate();
+//    absolute += step;
+    automatic = 1;
+//    abs2res(absolute, &angle0, &angle1, &angle2);
+//    anglesUpdate();
     displayUpdate();
   }
 
@@ -608,9 +610,10 @@ void loop()
   {
   //  Serial.println(F("Button B Pressed"));
     buttonBPress= false;
-    absolute -= step;
-    abs2res(absolute, &angle0, &angle1, &angle2);
-    anglesUpdate();
+    //absolute -= step;
+    automatic = 0;
+    //abs2res(absolute, &angle0, &angle1, &angle2);
+    //anglesUpdate();
     displayUpdate();
   }
 

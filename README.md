@@ -66,8 +66,8 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |automatic|Automatic increment|
 
  * A non-zero value in automatic starts the automatic absolute change cycle
- * Press of button A incremets the absolute position by the step value
- * Press of button B decrements the absolute index by the step value
+ * Press of button A starts the automatic map movement
+ * Press of button B stops the automatic mape movement
 
 #### Status display with buttons
 
@@ -133,7 +133,13 @@ A Reference pulse output is available to trigger the oscilloscope.
 
 ![amplifier](./images/amplifier.jpg)
 
+![amplifier-resistor-change](./images/amplifier-resistor-change.jpg)
+
+![amplifier-gain-adjusted](./images/amplifier-gain-adjusted.jpg)
+
 [representive LM1875 schematic](https://www.circuitbasics.com/audio-amplifiers/)
+
+[Video: initial pico map move](https://youtube.com/shorts/sYDpD-SnMvI)
 
 ## Connections
 
