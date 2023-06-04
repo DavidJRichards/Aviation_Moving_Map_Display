@@ -139,6 +139,8 @@ A Reference pulse output is available to trigger the oscilloscope.
 
 [representive LM1875 schematic](https://www.circuitbasics.com/audio-amplifiers/)
 
+[Video: Resolver 400Hz sine / cosine from PWM generator](https://youtube.com/shorts/cyT_KI8JY5w)
+
 [Video: initial pico map move](https://youtube.com/shorts/sYDpD-SnMvI)
 
 ## Connections
