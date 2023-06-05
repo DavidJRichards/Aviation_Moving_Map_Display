@@ -9,7 +9,9 @@
   see https://github.com/DavidJRichards/Aviation_Moving_Map_Display#exercise-software
   WIP, not yest fully working 
 
-  
+  https://github.com/khoih-prog/RP2040_PWM
+  https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
+  https://github.com/Uberi/Arduino-CommandParser
   PWM_Waveform_Fast.ino
   For RP2040 boards
   Written by Khoi Hoang
@@ -100,47 +102,48 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 //#define pin20         15    // PWM channel 7B
 
 
-uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, /*8, 10,*/ 28 };
+uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 28 };
 #define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
-
-// PWM freq 143783 @ cpu 133000000
-// 400 Hz * 360 degrees * (256/8)
 uint16_t PWM_data_idle_top = 924;   // 
 uint8_t PWM_data_idle_div = 1;
 // You can select any value
 uint16_t PWM_data_idle = 124;
-float   frequency = 1000;
-float dutyCycle = 50.0f;
+// dummy values for channel creation
+float PWM_frequency = 1000;
+float PWM_dutyCycle = 50.0f;
 
-// 256 table entries, step 8 per timer cycle === 32 samples per cycle
-// 1E6Hz  / 400Hz / (256/8) = 78.125 uS timer interval
-#define TIMER0_INTERVAL            79 //78
+// 36 table entries,  === 36 samples per cycle
+// 1E6Hz  / 400Hz / (36) = 69.444 uS timer interval
+// 69 = 402.576 Hz
+// 70 = 396.825 Hz
 
+// 40 table entries,  === 40 samples per cycle
+// 1E6Hz  / 400Hz / (40) = . uS timer interval
+// 62 = 403.2 Hz
+// 64 = 396.8 Hz
 
-//#define NUM_PWM_POINTS      256
-uint16_t sine256[]  = {  
-  // 0 to 90    (0-63)
-  127,130,133,136,139,143,146,149,152,155,158,161,164,167,170,173,176,178,181,184,187,190,192,195,198,200,203,205,208,210,212,215,
-  217,219,221,223,225,227,229,231,233,234,236,238,239,240,242,243,244,245,247,248,249,249,250,251,252,252,253,253,253,254,254,254,
-  // 90 to 180  (64-127)
-  254,254,254,254,253,253,253,252,252,251,250,249,249,248,247,245,244,243,242,240,239,238,236,234,233,231,229,227,225,223,221,219,
-  217,215,212,210,208,205,203,200,198,195,192,190,187,184,181,178,176,173,170,167,164,161,158,155,152,149,146,143,139,136,133,130,
+// 20 table entries,  === 20 samples per cycle
+// 1E6Hz  / 400Hz / (20) = . uS timer interval
+// 125 = 400.0 Hz
 
-  // 180 to 270 (128-191)
-  127,124,121,118,115,111,108,105,102, 99, 96, 93, 90, 87, 84, 81, 78, 76, 73, 70, 67, 64, 62, 59, 56, 54, 51, 49, 46, 44, 42, 39,
-   37, 35, 33, 31, 29, 27, 25, 23, 21, 20, 18, 16, 15, 14, 12, 11, 10,  9,  7,  6,  5,  5,  4,  3,  2,  2,  1,  1,  1,  0,  0,  0,
-  // 270 to 360 (192-255)
-    0,  0,  0,  0,  1,  1,  1,  2,  2,  3,  4,  5,  5,  6,  7,  9, 10, 11, 12, 14, 15, 16, 18, 20, 21, 23, 25, 27, 29, 31, 33, 35,
-   37, 39, 42, 44, 46, 49, 51, 54, 56, 59, 62, 64, 67, 70, 73, 76, 78, 81, 84, 87, 90, 93, 96, 99,102,105,108,111,115,118,121,124
-};
+#define NUM_SINE_ELEMENTS 36 // enough to hold largest table required
+
+struct sine_table_ {
+  int num_elements=NUM_SINE_ELEMENTS;
+  uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
+  float factors[NUM_SINE_ELEMENTS];
+  uint16_t levels[NUM_SINE_ELEMENTS];
+  uint16_t timer_interval;              // calculated in build sinetable function
+  float stepsize;                       // calculated in build sinetable function
+} sine_table;
+
 
 bool buttonAPress = false;
 bool buttonBPress = false;
-unsigned long buttonATime = 0; // To prevent debounce
-unsigned long buttonBTime = 0; // To prevent debounce
-
+//unsigned long buttonATime = 0; // To prevent debounce
+//unsigned long buttonBTime = 0; // To prevent debounce
 
 // Init RPI_PICO_Timer, can use any from 0-15 pseudo-hardware timers
 RPI_PICO_Timer ITimer0(0);
@@ -173,8 +176,6 @@ struct transport_ {
   int automatic;
 };        
 
-//uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, /*8, 10,*/ 28 };
-
 struct transport_ transport = {
   "fine",     NULL, 0, 0.0, NULL, 2, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
   "medium",   NULL, 4, 0.0, NULL, 6, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
@@ -185,12 +186,10 @@ struct transport_ transport = {
   0,                                                      // automatic
 };
 
-
-
-char dashLine[] = "=============================================================";
+char dashLine[] = "=====================================================================";
 
 // index into 400Hz sine table for PWM frequency generation
-volatile int step256 = 0; 
+volatile int step_index = 0; 
 
 // temporary used in PWM duty calculations
 float target;
@@ -222,20 +221,64 @@ int step=10;
 int automatic=0;
 long absolute=0;
 
+void build_sintable(void)
+{
+  int n;
+  sine_table.stepsize = 360 / sine_table.num_elements;
+  sine_table.timer_interval = 1E6 / 400 / sine_table.num_elements;
+
+  for(n=0; n<sine_table.num_elements; n++)
+  {
+    sine_table.elements[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127));
+    sine_table.factors[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127)) / 256.0;
+    // waveform is a bit flattened on top when using full scale of 1000
+    sine_table.levels[n] = int(400 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 399));
+  }
+
+#if 1
+  Serial.print("Sine table num elements: ");
+  Serial.println(sine_table.num_elements);
+  Serial.print("Sine table step degrees: ");
+  Serial.println(sine_table.stepsize);
+  Serial.print("Timer interval uS: ");
+  Serial.println(sine_table.timer_interval);
+
+  Serial.println();
+  for(int j=0; j<4; j++)
+  {
+    for(int i=0;  i<sine_table.num_elements/4; i++)
+    {
+      Serial.print(sine_table.levels[(j*sine_table.num_elements/4) + i]);
+      Serial.print(",\t");
+    }
+  Serial.println();
+  }
+  Serial.println(dashLine);
+#endif
+}
+
+
 // PWM duty change used in stepping sine values of 400 Hz waveforms
 bool TimerHandler0(struct repeating_timer *t)
 { 
   (void) t;
   float temp;
-  step256+=8;   // limited time available, need to use fewer steps
-  if(step256  > 255) step256 = 0; // cycle through all sine table values
+  uint16_t levels[8];
+  step_index++;
+  if(step_index >= sine_table.num_elements)
+  {
+    step_index = 0;
+  }
 
+#if 1 // use float percentage 0 to 100
 // center resultant waveform around 50% PWM full scale is 100.0 * ( sine256[step256%256] / 256.0f )
-  temp = ( sine256[step256%256] / 256.0f ); 
+// input scale is +- 50, output scale is 0 to 100%
+  temp = ( sine_table.factors[step_index] ); 
 
   // fine resolver output
   level1 = ( 50.0 - scale1 ) + ( 2 * scale1 ) * temp;
   level2 = ( 50.0 - scale2 ) + ( 2 * scale2 ) * temp;
+// DC percentage is float 0 to 100%  
   PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], level1);
   PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], level2);
 
@@ -252,9 +295,35 @@ bool TimerHandler0(struct repeating_timer *t)
   PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], level6);
 
   level7 = 100.0 * temp; // reference sinewave output
-  PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], level7);
+  PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], level7 );
 
-  digitalWrite(pinOpSync,step256==0); // sync pulse output
+#else // use int level 0 to 1000 TODO, make faster
+// full level is 1000, input scale is +- 50
+// levels table is integer 0 to 1000
+  temp = ( sine_table.levels[step_index] ); 
+
+  levels[0] = ( 50.0 - scale1 ) + ( 2 * scale1 ) * temp / 100;
+  levels[1] = ( 50.0 - scale2 ) + ( 2 * scale2 ) * temp / 100;
+// manual level is integer 0 to 1000 (actually 800 due to output voltage limitation problem)  
+  PWM_Instance[0]->setPWM_manual(PWM_Pins[0], levels[0]);
+  PWM_Instance[1]->setPWM_manual(PWM_Pins[1], levels[1]);
+
+  levels[2] = ( 50.0 - scale3 ) + ( 2 * scale3 ) * temp / 100;
+  levels[3] = ( 50.0 - scale4 ) + ( 2 * scale4 ) * temp / 100;
+  PWM_Instance[2]->setPWM_manual(PWM_Pins[2], levels[2]);
+  PWM_Instance[3]->setPWM_manual(PWM_Pins[3], levels[3]);
+
+  levels[4] = ( 50.0 - scale5 ) + ( 2 * scale5 ) * temp / 100;
+  levels[5] = ( 50.0 - scale6 ) + ( 2 * scale6 ) * temp / 100;
+  PWM_Instance[4]->setPWM_manual(PWM_Pins[4], levels[4]);
+  PWM_Instance[5]->setPWM_manual(PWM_Pins[5], levels[5]);
+
+  level7 = 100.0 * temp; // reference sinewave output
+  PWM_Instance[6]->setPWM_manual(PWM_Pins[6],  sine_table.levels[step_index]);
+
+#endif
+
+  digitalWrite(pinOpSync,step_index==0); // sync pulse output
 
   return true;
 }
@@ -262,8 +331,8 @@ bool TimerHandler0(struct repeating_timer *t)
 // ISR for frequency sync input
 void syncInput(void) {
   // try to limit jitter here due to noise on input pin
-  if(step256>190)
-    step256=0;
+  if(step_index>sine_table.num_elements*3/4)
+    step_index=0;
 }
 
 // ISR for button presses
@@ -384,16 +453,6 @@ void displayUpdate(void)
   tft.println(automatic);
 }
 
-#if 0
-void cmd_test(MyCommandParser::Argument *args, char *response) {
-  Serial.print("string: "); Serial.println(args[0].asString);
-  Serial.print("double: "); Serial.println(args[1].asDouble);
-  Serial.print("int64: "); Serial.println((int32_t)args[2].asInt64); // NOTE: on older AVR-based boards, Serial doesn't support printing 64-bit values, so we'll cast it down to 32-bit
-  Serial.print("uint64: "); Serial.println((uint32_t)args[3].asUInt64); // NOTE: on older AVR-based boards, Serial doesn't support printing 64-bit values, so we'll cast it down to 32-bit
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-#endif
-
 // serial command handler functions
 void cmd_report(MyCommandParser::Argument *args, char *response) {
   displayUpdate();
@@ -465,7 +524,10 @@ void setup()
   Serial.println();
   Serial.println(dashLine);
   Serial.println("Moving map transport exerciser.");
-  Serial.println();
+  Serial.println(dashLine);
+  
+  build_sintable();
+
 //  Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
 //  Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
 //  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
@@ -487,13 +549,13 @@ void setup()
 
   for (uint8_t index = 0; index < NUM_OF_PINS; index++)
   {
-
-    PWM_Instance[index] = new RP2040_PWM(PWM_Pins[index], frequency, dutyCycle);
+    // use dummy values
+    PWM_Instance[index] = new RP2040_PWM(PWM_Pins[index], PWM_frequency, PWM_dutyCycle);
 
     if (PWM_Instance[index])
     {
+      // initial values
       PWM_Instance[index]->setPWM_manual(PWM_Pins[index], PWM_data_idle_top, PWM_data_idle_div, PWM_data_idle, true);
-//      PWM_Instance[index]->setPWM();
 
       uint32_t div = PWM_Instance[index]->get_DIV();
       uint32_t top = PWM_Instance[index]->get_TOP();
@@ -510,7 +572,6 @@ void setup()
 
   }
 
-//  parser.registerCommand("TEST", "sdiu", &cmd_test);
   parser.registerCommand("rep", "",  &cmd_report);
   parser.registerCommand("fin", "d", &cmd_fin);
   parser.registerCommand("med", "d", &cmd_med);
@@ -542,7 +603,7 @@ void setup()
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
   // Interval in microsecs
-  if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL, TimerHandler0))
+  if (ITimer0.attachInterruptInterval(sine_table.timer_interval, TimerHandler0))
   {
 //    Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
   }
