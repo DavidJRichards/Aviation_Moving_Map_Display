@@ -62,8 +62,10 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |med|Medium angle|
 |cou|Coarse angle|
 |abs|Absolute index|
+|rep|report current settings|
 |step|index step|
-|automatic|Automatic increment|
+|auto|enable automatic increment|
+|delay|delay mS between increments|
 
  * A non-zero value in automatic starts the automatic absolute change cycle
  * Press of button A starts the automatic map movement
@@ -77,7 +79,7 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 <br>
 #### Absolute transport position encoding
 
-
+Approximate representation showing supposed overlap of resolver rotations.
 
 |Absolute|19|18|17|16|15|14|13|12|11|10|09|08|07|06|05|04|03|02|01|00|
 |--------|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
@@ -86,6 +88,7 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |Coarse  |  |  |07|06|05|04|03|02|01|00|  |  |  |  |  |  |  |  |  |  |
 
 <br>
+
 ##### Absolute to resolver conversion
 
 ```
@@ -142,6 +145,8 @@ A Reference pulse output is available to trigger the oscilloscope.
 [Video: Resolver 400Hz sine / cosine from PWM generator](https://youtube.com/shorts/cyT_KI8JY5w)
 
 [Video: initial pico map move](https://youtube.com/shorts/sYDpD-SnMvI)
+
+[Video resolver spinning xy display](https://youtube.com/shorts/flxdNe_Nj5M)
 
 ## Connections
 

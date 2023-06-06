@@ -75,8 +75,8 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 #define LED_OFF       HIGH
 
 #define pinLed        25    // On-board BUILTIN_LED
-#define pinOpSync     7    // 
-#define pinIpTrig     5
+#define pinOpSync     27    // 
+#define pinIpTrig     28
 
 #define ButtonA       12    // PWM 6A
 #define ButtonB       13    // PWM 6B
@@ -102,7 +102,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 //#define pin20         15    // PWM channel 7B
 
 
-uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 28 };
+uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7  };
 #define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
@@ -128,13 +128,13 @@ float PWM_dutyCycle = 50.0f;
 // 1E6Hz  / 400Hz / (20) = . uS timer interval
 // 125 = 400.0 Hz
 
-#define NUM_SINE_ELEMENTS 36 // enough to hold largest table required
+#define NUM_SINE_ELEMENTS 36 // steps per cycle of 400Hz wave
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
-  uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
+  //uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
   float factors[NUM_SINE_ELEMENTS];
-  uint16_t levels[NUM_SINE_ELEMENTS];
+  int16_t levels[NUM_SINE_ELEMENTS];
   uint16_t timer_interval;              // calculated in build sinetable function
   float stepsize;                       // calculated in build sinetable function
 } sine_table;
@@ -172,8 +172,9 @@ struct transport_ {
   struct resolver_ resolvers[3];
   struct reference_ reference;
   long absolute;
-  int step;
+  int autostep;
   int automatic;
+  int autodelay;
 };        
 
 struct transport_ transport = {
@@ -182,8 +183,9 @@ struct transport_ transport = {
   "coarse",   NULL, 1, 0.0, NULL, 3, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
   "reference",NULL, 28, 0.0,                              // name, instance, pin, level
   0L,                                                     // absolute
-  10,                                                     // step
+  10,                                                     // autostep
   0,                                                      // automatic
+  10,                                                     // autodelay
 };
 
 char dashLine[] = "=====================================================================";
@@ -191,25 +193,26 @@ char dashLine[] = "=============================================================
 // index into 400Hz sine table for PWM frequency generation
 volatile int step_index = 0; 
 
-// temporary used in PWM duty calculations
-float target;
-
-// instantanious PWM duty cycle for each PWM channel
-float level1;
-float level2;
-float level3;
-float level4;
-float level5;
-float level6;
-float level7;
-
 // scaling multipliers of each resolver signal
+float scale0;
 float scale1;
 float scale2;
 float scale3;
 float scale4;
 float scale5;
 float scale6;
+float scale7;
+float scale8;
+
+float amp0;
+float amp1;
+float amp2;
+float amp3;
+float amp4;
+float amp5;
+float amp6;
+float amp7;
+float amp8;
 
 // resolver angles
 float angle0;
@@ -217,9 +220,10 @@ float angle1;
 float angle2;
 
 // menu variables
-int step=10;
+float autostep=1;
 int automatic=0;
-long absolute=0;
+int autodelay=10;
+float absolute=0;
 
 void build_sintable(void)
 {
@@ -229,10 +233,9 @@ void build_sintable(void)
 
   for(n=0; n<sine_table.num_elements; n++)
   {
-    sine_table.elements[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127));
-    sine_table.factors[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127)) / 256.0;
-    // waveform is a bit flattened on top when using full scale of 1000
-    sine_table.levels[n] = int(400 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 399));
+//    sine_table.elements[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127));
+    sine_table.factors[n] = int((sin(M_PI*(n*sine_table.stepsize)/180.0) * 128)) / 256.0;
+    sine_table.levels[n] = int((sin(M_PI*(n*sine_table.stepsize)/180.0) * 512));
   }
 
 #if 1
@@ -262,64 +265,71 @@ void build_sintable(void)
 bool TimerHandler0(struct repeating_timer *t)
 { 
   (void) t;
-  float temp;
-  uint16_t levels[8];
+  float float_sine_step_value;
+  int16_t int_sine_step_value;
+  uint16_t dc_levels[8];
+  float dc_percent[8];
   step_index++;
   if(step_index >= sine_table.num_elements)
   {
     step_index = 0;
   }
 
-#if 1 // use float percentage 0 to 100
+#if 0 // use float percentage 0 to 100
 // center resultant waveform around 50% PWM full scale is 100.0 * ( sine256[step256%256] / 256.0f )
-// input scale is +- 50, output scale is 0 to 100%
-  temp = ( sine_table.factors[step_index] ); 
+  float_sine_step_value = ( sine_table.factors[step_index] ); 
 
   // fine resolver output
-  level1 = ( 50.0 - scale1 ) + ( 2 * scale1 ) * temp;
-  level2 = ( 50.0 - scale2 ) + ( 2 * scale2 ) * temp;
-// DC percentage is float 0 to 100%  
-  PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], level1);
-  PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], level2);
+  dc_percent[0] = 50.0 +  scale0 * float_sine_step_value;
+  PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], dc_percent[0]);
+  dc_percent[1] = 50.0 +  scale1 * float_sine_step_value;
+  PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], dc_percent[1]);
 
   // medium resolver output
-  level3 = ( 50.0 - scale3 ) + ( 2 * scale3 ) * temp;
-  level4 = ( 50.0 - scale4 ) + ( 2 * scale4 ) * temp;
-  PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], level3);
-  PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], level4);
+  dc_percent[2] = 50.0 + scale2 * float_sine_step_value;
+  PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], dc_percent[2]);
+  dc_percent[3] = 50.0 + scale3 * float_sine_step_value;  
+  PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], dc_percent[3]);
 
   // coarse resolver output
-  level5 = ( 50.0 - scale5 ) + ( 2 * scale5 ) * temp;
-  level6 = ( 50.0 - scale6 ) + ( 2 * scale6 ) * temp;
-  PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], level5);
-  PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], level6);
+  dc_percent[4] = 50.0 + scale4 * float_sine_step_value;
+  PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], dc_percent[4]);
+  dc_percent[5] = 50.0 + scale5 * float_sine_step_value;  
+  PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], dc_percent[5]);
+ 
+  // reference channel
+  dc_percent[6] = 50.0 + amp6 * float_sine_step_value; // reference sinewave output
+  PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], dc_percent[6] );
+  dc_percent[7] = 50.0 + amp7 * float_sine_step_value; // reference sinewave output
+  PWM_Instance[7]->setPWM_DCPercentage_manual(PWM_Pins[7], dc_percent[7] );
 
-  level7 = 100.0 * temp; // reference sinewave output
-  PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], level7 );
-
-#else // use int level 0 to 1000 TODO, make faster
+#else // use int level 0 to 1000 TODO, maybe faster
 // full level is 1000, input scale is +- 50
 // levels table is integer 0 to 1000
-  temp = ( sine_table.levels[step_index] ); 
+  int_sine_step_value = ( sine_table.levels[step_index] ); 
 
-  levels[0] = ( 50.0 - scale1 ) + ( 2 * scale1 ) * temp / 100;
-  levels[1] = ( 50.0 - scale2 ) + ( 2 * scale2 ) * temp / 100;
+#define div_const 64    // how to choose this value ??
+
 // manual level is integer 0 to 1000 (actually 800 due to output voltage limitation problem)  
-  PWM_Instance[0]->setPWM_manual(PWM_Pins[0], levels[0]);
-  PWM_Instance[1]->setPWM_manual(PWM_Pins[1], levels[1]);
+  dc_levels[0] = 500 +  scale0  * int_sine_step_value / div_const;
+  PWM_Instance[0]->setPWM_manual(PWM_Pins[0], dc_levels[0]);
+  dc_levels[1] = 500 +  scale1  * int_sine_step_value / div_const;
+  PWM_Instance[1]->setPWM_manual(PWM_Pins[1], dc_levels[1]);
 
-  levels[2] = ( 50.0 - scale3 ) + ( 2 * scale3 ) * temp / 100;
-  levels[3] = ( 50.0 - scale4 ) + ( 2 * scale4 ) * temp / 100;
-  PWM_Instance[2]->setPWM_manual(PWM_Pins[2], levels[2]);
-  PWM_Instance[3]->setPWM_manual(PWM_Pins[3], levels[3]);
+  dc_levels[2] = 500 +  scale2  * int_sine_step_value / div_const;
+  PWM_Instance[2]->setPWM_manual(PWM_Pins[2], dc_levels[2]);
+  dc_levels[3] = 500 +  scale3  * int_sine_step_value / div_const;
+  PWM_Instance[3]->setPWM_manual(PWM_Pins[3], dc_levels[3]);
 
-  levels[4] = ( 50.0 - scale5 ) + ( 2 * scale5 ) * temp / 100;
-  levels[5] = ( 50.0 - scale6 ) + ( 2 * scale6 ) * temp / 100;
-  PWM_Instance[4]->setPWM_manual(PWM_Pins[4], levels[4]);
-  PWM_Instance[5]->setPWM_manual(PWM_Pins[5], levels[5]);
+  dc_levels[4] = 500 +  scale4  * int_sine_step_value / div_const;
+  PWM_Instance[4]->setPWM_manual(PWM_Pins[4], dc_levels[4]);
+  dc_levels[5] = 500 +  scale5  * int_sine_step_value / div_const;
+  PWM_Instance[5]->setPWM_manual(PWM_Pins[5], dc_levels[5]);
 
-  level7 = 100.0 * temp; // reference sinewave output
-  PWM_Instance[6]->setPWM_manual(PWM_Pins[6],  sine_table.levels[step_index]);
+  dc_levels[6] = 500 + amp6 * int_sine_step_value / div_const; // reference +sinewave output
+  PWM_Instance[6]->setPWM_manual(PWM_Pins[6], dc_levels[6]);
+  dc_levels[7] = 500 + amp7 * int_sine_step_value / div_const; // reference -sinewave output
+  PWM_Instance[7]->setPWM_manual(PWM_Pins[7], dc_levels[7]);
 
 #endif
 
@@ -381,21 +391,32 @@ void abs2res(long absolute, float *fine, float *medium, float *coarse)
 // transfer required resolver angles to PWM scale multipliers
 void anglesUpdate(void)
 {
+  float target;
+
   target = fmod(angle0, 360) * M_PI/180.0;
-  scale1=(sin(target)*50.0);
-  scale2=(cos(target)*50.0);
+  scale0=(sin(target)*50.0);
+  scale1=(cos(target)*50.0);
+  amp0 = ( 50.0 - scale0 ) + ( 2 * scale0 );
+  amp1 = ( 50.0 - scale1 ) + ( 2 * scale1 );
 
   target = fmod(angle1, 360) * M_PI/180.0;
-  scale3=(sin(target)*50.0);
-  scale4=(cos(target)*50.0);
+  scale2=(sin(target)*50.0);
+  scale3=(cos(target)*50.0);
+  amp2 = ( 50.0 - scale2 ) + ( 2 * scale2 );
+  amp3 = ( 50.0 - scale3 ) + ( 2 * scale3 );
 
   target = fmod(angle2, 360) * M_PI/180.0;
-  scale5=(sin(target)*50.0);
-  scale6=(cos(target)*50.0);
+  scale4=(sin(target)*50.0);
+  scale5=(cos(target)*50.0);
+  amp4 = ( 50.0 - scale4 ) + ( 2 * scale4 );
+  amp5 = ( 50.0 - scale5 ) + ( 2 * scale5 );
+ 
+  amp6 = +50.0;
+  amp7 = -50.0;
 }
 
 // show details for individual PWM channel settings
-void  printDetails(const char * name, int index, float angle, float scaleA, float scaleB, float levelA, float levelB) 
+void  printDetails(const char * name, int index, float angle, float scaleA, float scaleB) 
 {
   Serial.println();
   Serial.print(name);
@@ -427,9 +448,9 @@ void displayUpdate(void)
 
   Serial.println("=====================");
 
-  printDetails("Fine", 0, angle0, scale1, scale2, level1, level2); 
-  printDetails("Medium", 1, angle1, scale3, scale4, level3, level4); 
-  printDetails("Coarse", 2, angle2, scale5, scale6, level5, level6); 
+  printDetails("Fine",   0, angle0, scale0, scale1); 
+  printDetails("Medium", 1, angle1, scale2, scale3); 
+  printDetails("Coarse", 2, angle2, scale4, scale5); 
 
   absolute = res2abs(angle0, angle1, angle2);
   tft.println();
@@ -439,15 +460,22 @@ void displayUpdate(void)
   Serial.println(absolute);
 
   Serial.print("Step = ");
-  Serial.print(step);
-  Serial.print(", Auto = ");
+  Serial.print(autostep);
+
+  Serial.print(", Delay= ");
+  Serial.println(autodelay);
+
+  Serial.print("Auto = ");
   Serial.println(automatic);
 
   tft.print("Absolute= ");
   tft.println(absolute);
 
   tft.print("Step= ");
-  tft.println(step);
+  tft.println(autostep);
+
+  tft.print("Delay= ");
+  tft.println(autodelay);
 
   tft.print("Automatic= ");
   tft.println(automatic);
@@ -468,7 +496,7 @@ void cmd_abs(MyCommandParser::Argument *args, char *response) {
 }
 
 void cmd_step(MyCommandParser::Argument *args, char *response) {
-  step = args[0].asDouble;
+  autostep = args[0].asDouble;
   displayUpdate();
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
@@ -479,30 +507,30 @@ void cmd_automatic(MyCommandParser::Argument *args, char *response) {
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
+void cmd_autodelay(MyCommandParser::Argument *args, char *response) {
+  autodelay = args[0].asDouble;
+  displayUpdate();
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
 void cmd_fin(MyCommandParser::Argument *args, char *response) {
   angle0 = args[0].asDouble;
-  target = fmod(angle0, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  scale1=(sin(target)*50.0);
-  scale2=(cos(target)*50.0);
+  anglesUpdate();
   displayUpdate();
 }
 
 void cmd_med(MyCommandParser::Argument *args, char *response) {
   angle1 = args[0].asDouble;
-  target = fmod(angle1, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  scale3=(sin(target)*50.0);
-  scale4=(cos(target)*50.0);
+  anglesUpdate();
   displayUpdate();
 }
 
 void cmd_coa(MyCommandParser::Argument *args, char *response) {
   angle2 = args[0].asDouble;
-  target = fmod(angle2, 360) * M_PI/180.0;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  scale5=(sin(target)*50.0);
-  scale6=(cos(target)*50.0);
+  anglesUpdate();
   displayUpdate();
 }
 
@@ -578,7 +606,8 @@ void setup()
   parser.registerCommand("coa", "d", &cmd_coa);
   parser.registerCommand("abs", "d", &cmd_abs);
   parser.registerCommand("step", "d", &cmd_step);
-  parser.registerCommand("automatic", "d", &cmd_automatic);
+  parser.registerCommand("auto", "d", &cmd_automatic);
+  parser.registerCommand("del",  "d", &cmd_autodelay);
   
   Serial.println("to show summary of current settings:");
   Serial.println("registered command: rep ");
@@ -597,6 +626,8 @@ void setup()
   Serial.println();
   Serial.println("to enable (1) or disable (0) automatic increment:");
   Serial.println("registered command: auto <double> ");
+  Serial.println("delay between automatic updates mS:");
+  Serial.println("registered command: del <double> ");
   Serial.println();
   Serial.println("Note fine step for 1 degree is absolute 1");
   Serial.println("Note medium step for 1 degree is absolute 30");
@@ -626,7 +657,7 @@ void printPWMInfo(RP2040_PWM* PWM_Instance)
 
   PWM_LOGDEBUG5("TOP =", top, ", DIV =", div, ", CPU_freq =", PWM_Instance->get_freq_CPU());
 
-  delay(100);
+//  delay(100);
 }
 
 // loop -----------------------------------------------------------------------------------------
@@ -661,9 +692,10 @@ void loop()
 
   if(automatic)
   {
-    absolute += step;   
+    absolute += autostep;   
     abs2res(absolute, &angle0, &angle1, &angle2); 
     anglesUpdate();
+    delay(autodelay);
   }
 
   // Use at low freq to check
