@@ -50,9 +50,10 @@ Information supplied by Erik Baigar, Munich.
 
 ### Development of map transport exerciser using Raspberrypi Pico 2040 
 
-This is work in progress, initial version drives three pairs of sine/cosine outputs, angle set on serial command line
-
-The serial console is used with a command interpreter to change the settings for test purposes. Console is accesed by USB at 115200 bps with a terminal program or the arduino IDE.
+The software simulates three 400 Hz resolver tranmitters and provides a reference sinewave.
+Present version drives three pairs of sine/cosine outputs, and an additional pair of sinewave outputs 180 degree apart as reference.
+Resolver simulation is controlled by serial commands, push buttons, and a rotary encoder.
+Console is accesed by USB at 115200 bps with a terminal program or the arduino IDE.
 
 Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
 
@@ -65,17 +66,51 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |rep|report current settings|
 |step|index step|
 |auto|enable automatic increment|
-|delay|delay mS between increments|
+|del|delay mS between increments|
 
+ * rotation of the encoder adjusts the absolute value by plus or minus step
  * A non-zero value in automatic starts the automatic absolute change cycle
  * Press of button A starts the automatic map movement
  * Press of button B stops the automatic mape movement
+ * When changing from auto to manual the encoder value is updated to allow fine control.
 
 #### Status display with buttons
 
 ![LCD status](./images/LCD_status.jpg)
 
 [Arduino sketch](./software/pico_400hz_sine_PWM/pico_400hz_sine_PWM.ino)
+
+### Pico2040 pin designations
+
+|GP Pin|Function|
+|------|--------|
+|12|Button A|
+|13|Button B|
+|14|Button X|
+|15|Button Y|
+|||
+|16|TFT DC|
+|17|TFT CS|
+|18|TFT SCLK|
+|19|TFT MOSI|
+|||
+|20|ENCODER IN2|
+|22|ENCODER IN1|
+|26|ENCODER SW|
+|||
+| 0|PWM 0 |
+| 2|PWM 1 |
+| 4|PWM 2|
+| 6|PWM 3|
+| 1|PWM 4|
+| 3|PWM 5|
+|21|PWM 6|
+| 7|PWM 7|
+|||
+|25|LED|
+|27|Sync OP|
+|28|Trig IP|
+
 <br>
 #### Absolute transport position encoding
 
@@ -245,6 +280,7 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 [boards photo](https://cdn.rochesteravionicarchives.co.uk/img/catalog/C1774_%28pcbs_small%29_.jpg?w=1500&fit=max)
 
 <br>
+### Screen module circuit boards
 
 |No|Name|Position|
 |--|----|--------|
@@ -254,9 +290,21 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 |8|AMPLIFIER, ELECTRONIC CONTROL|Top|
 |9|AMPLIFIER, EC (OUTPUT)|Side|
 
-* Note: 10, 11, 12 not fitted
+* Note: Boards 10, 11, 12 not fitted
 
 <br>
+
+### Board connector layout looking into PCB connector
+
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|--|
+| 2| 4|  | 6| 8|  |10|12|  |14|16|  |18|20|  |22|24|  |26|28|  |30|32|  |34|36|  |38|40|  |42|44|  |46|48|  |50|52|  |54|56|  |58|60|
+| 1| 3|  | 5| 7|  | 9|11|  |13|15|  |17|19|  |21|23|  |25|27|  |29|31|  |33|35|  |37|39|  |41|43|  |45|47|  |49|51|  |53|55|  |57|59|
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+
+<br>
+
+### Board pin functions
 
 |Pin #|Board 5|AMPLIFIER, ERROR (Y-Θ)|
 |-----|-------|----------------------|

@@ -39,6 +39,18 @@
 #include <SPI.h>             // used by LCD display
 #include <CommandParser.h>   // serial commands
 #include "RP2040_PWM.h"      // to define PWM channels
+#include <RotaryEncoder.h>
+
+#define ENCODER_PIN_IN2   20
+#define ENCODER_PIN_IN1   22 
+#define ENCODER_SW_PIN    26
+
+// Setup a RotaryEncoder with 4 steps per latch for the 2 signal input pins:
+// RotaryEncoder encoder(PIN_IN1, PIN_IN2, RotaryEncoder::LatchMode::FOUR3);
+
+// Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
+RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
+
 
 #define TFT_CS        17
 #define TFT_RST       -1 // Or set to -1 and connect to Arduino RESET pin
@@ -83,28 +95,29 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 #define ButtonX       14    // PWM 7A
 #define ButtonY       15    // PWM 7B
 
-#define pin1          0     // PWM channel 0A
-#define pin2          1     // PWM channel 0B
-#define pin4          2     // PWM channel 1A
-#define pin5          3     // PWM channel 1B
-#define pin6          4     // PWM channel 2A
-//#define pin7          5     // PWM channel 2B
-#define pin9          6     // PWM channel 3A
-//#define pin10         7     // PWM channel 3B
-//#define pin11         8     // PWM channel 4A (mot1-)
-//#define pin12         9     // PWM channel 4B (mot1+)
-//#define pin14         10    // PWM channel 5A (mot2-)
-//#define pin15         11    // PWM channel 5B (mot2+)
-//#define pin16         12    // PWM channel 6A (button A)
-//#define pin17         13    // PWM channel 6B (button B)
-#define pin34         28    // PWM channel 6A 
-//#define pin19         14    // PWM channel 7A
-//#define pin20         15    // PWM channel 7B
-
-
 uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7  };
 #define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
+
+/*
+#define pin1          0     // PWM channel 0A tx
+#define pin2          1     // PWM channel 0B rx
+#define pin4          2     // PWM channel 1A gp2
+#define pin5          3     // PWM channel 1B int
+#define pin6          4     // PWM channel 2A sda
+#define pin7          5     // PWM channel 2B scl
+#define pin9          6     // PWM channel 3A r
+#define pin10         7     // PWM channel 3B g
+#define pin11         8     // PWM channel 4A b (mot1-)
+#define pin12         9     // PWM channel 4B (mot1+)
+#define pin14         10    // PWM channel 5A (mot2-)
+#define pin15         11    // PWM channel 5B (mot2+)
+#define pin16         12    // PWM channel 6A (button A)
+#define pin17         13    // PWM channel 6B (button B)
+#define pin34         28    // PWM channel 6A adc2
+#define pin19         14    // PWM channel 7A (button x)
+#define pin20         15    // PWM channel 7B (button y)
+*/
 
 uint16_t PWM_data_idle_top = 924;   // 
 uint8_t PWM_data_idle_div = 1;
@@ -128,10 +141,12 @@ float PWM_dutyCycle = 50.0f;
 // 1E6Hz  / 400Hz / (20) = . uS timer interval
 // 125 = 400.0 Hz
 
-#define NUM_SINE_ELEMENTS 36 // steps per cycle of 400Hz wave
+#define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
+#define SINEWAVE_FREQUENCY_HZ 400   // target frequency
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
+  int sinewave_frequency=SINEWAVE_FREQUENCY_HZ;
   //uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
   float factors[NUM_SINE_ELEMENTS];
   int16_t levels[NUM_SINE_ELEMENTS];
@@ -229,7 +244,7 @@ void build_sintable(void)
 {
   int n;
   sine_table.stepsize = 360 / sine_table.num_elements;
-  sine_table.timer_interval = 1E6 / 400 / sine_table.num_elements;
+  sine_table.timer_interval = 1E6 / sine_table.sinewave_frequency / sine_table.num_elements;
 
   for(n=0; n<sine_table.num_elements; n++)
   {
@@ -418,6 +433,7 @@ void anglesUpdate(void)
 // show details for individual PWM channel settings
 void  printDetails(const char * name, int index, float angle, float scaleA, float scaleB) 
 {
+#if 1
   Serial.println();
   Serial.print(name);
   Serial.print(" Angle = ");
@@ -427,7 +443,7 @@ void  printDetails(const char * name, int index, float angle, float scaleA, floa
   Serial.print(scaleA);
   Serial.print(", ");
   Serial.println(scaleB);
-
+#endif
   tft.setCursor(0, 0 + index * 55);
   tft.println(name);
   tft.print("Angle = ");
@@ -445,6 +461,7 @@ void displayUpdate(void)
   tft.fillScreen(ST77XX_BLACK);
   tft.setTextColor(ST77XX_GREEN);
   tft.setTextSize(2);
+  tft.println();
 
   Serial.println("=====================");
 
@@ -453,8 +470,7 @@ void displayUpdate(void)
   printDetails("Coarse", 2, angle2, scale4, scale5); 
 
   absolute = res2abs(angle0, angle1, angle2);
-  tft.println();
-
+#if 1
   Serial.println();
   Serial.print("Absolute = ");
   Serial.println(absolute);
@@ -467,6 +483,7 @@ void displayUpdate(void)
 
   Serial.print("Auto = ");
   Serial.println(automatic);
+#endif
 
   tft.print("Absolute= ");
   tft.println(absolute);
@@ -664,6 +681,9 @@ void printPWMInfo(RP2040_PWM* PWM_Instance)
 
 void loop()
 {
+  static int refresh_time=0;
+  static int old_absolute=0;
+
   if (Serial.available()) {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
@@ -673,6 +693,29 @@ void loop()
     if(!parser.processCommand(line, response))
       Serial.println(response);
   }
+
+  static int pos = 0;
+  encoder.tick();
+
+  int newPos = encoder.getPosition();
+  if (pos != newPos) {
+  #if 0
+    Serial.print("pos:");
+    Serial.print(newPos);
+    Serial.print(" dir:");
+    Serial.println((int)(encoder.getDirection()));
+  #endif
+    pos = newPos;
+  
+    if(!automatic)
+    {
+      absolute = pos * autostep;
+      abs2res(absolute, &angle0, &angle1, &angle2);
+      anglesUpdate();
+   }
+
+
+  } // if
 
   if(buttonAPress)
   {
@@ -687,15 +730,34 @@ void loop()
   //  Serial.println(F("Button B Pressed"));
     buttonBPress= false;
     automatic = 0;
+    encoder.setPosition(absolute/autostep); // update encode value after auto run
     displayUpdate();
   }
 
   if(automatic)
   {
-    absolute += autostep;   
-    abs2res(absolute, &angle0, &angle1, &angle2); 
-    anglesUpdate();
-    delay(autodelay);
+    static int del_count=0;
+    int del_value;
+    del_value=millis();
+    refresh_time=del_value; // inhibit auto display refresh (force display update with button press)
+    if(del_value - del_count > autodelay)
+    {
+      del_count=del_value;
+      absolute += autostep;   
+      abs2res(absolute, &angle0, &angle1, &angle2); 
+      anglesUpdate();
+    }
+  }
+
+  // update display every second if absolute value has changed
+  if (millis() - refresh_time > 1000) 
+  {
+    if(old_absolute != absolute)
+    {
+      old_absolute = absolute;
+      displayUpdate();
+    }
+    refresh_time = millis();
   }
 
   // Use at low freq to check
