@@ -12,6 +12,7 @@
   https://github.com/khoih-prog/RP2040_PWM
   https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
   https://github.com/Uberi/Arduino-CommandParser
+
   PWM_Waveform_Fast.ino
   For RP2040 boards
   Written by Khoi Hoang
@@ -29,7 +30,7 @@
 // Don't define _TIMERINTERRUPT_LOGLEVEL_ > 0. Only for special ISR debugging only. Can hang the system.
 #define TIMER_INTERRUPT_DEBUG         2
 #define _TIMERINTERRUPT_LOGLEVEL_     0 //4
-#define _PWM_LOGLEVEL_                0 //2
+#define _PWM_LOGLEVEL_                2 //2
 
 #include "RPi_Pico_TimerInterrupt.h" // pwm duty cycle change timer 
 #include <math.h>            // use sin and cos functions in main loop only
@@ -86,7 +87,7 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 #define LED_ON        LOW
 #define LED_OFF       HIGH
 
-#define pinLed        25    // On-board BUILTIN_LED
+#define pinLED        25    // On-board BUILTIN_LED
 #define pinOpSync     27    // 
 #define pinIpTrig     28
 
@@ -119,7 +120,7 @@ RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 #define pin20         15    // PWM channel 7B (button y)
 */
 
-uint16_t PWM_data_idle_top = 924;   // 
+uint16_t PWM_data_idle_top = 1330; //100 kHz PWM
 uint8_t PWM_data_idle_div = 1;
 // You can select any value
 uint16_t PWM_data_idle = 124;
@@ -240,6 +241,12 @@ int automatic=0;
 int autodelay=10;
 float absolute=0;
 
+// screensaver
+#define SLEEPTIME 300
+bool awaken = false;
+bool asleep = false;
+int sleeptimer = SLEEPTIME;
+
 void build_sintable(void)
 {
   int n;
@@ -327,24 +334,24 @@ bool TimerHandler0(struct repeating_timer *t)
 
 // manual level is integer 0 to 1000 (actually 800 due to output voltage limitation problem)  
   dc_levels[0] = 500 +  scale0  * int_sine_step_value / div_const;
-  PWM_Instance[0]->setPWM_manual(PWM_Pins[0], dc_levels[0]);
+  PWM_Instance[0]->setPWM_manual_Fast(PWM_Pins[0], dc_levels[0]);
   dc_levels[1] = 500 +  scale1  * int_sine_step_value / div_const;
-  PWM_Instance[1]->setPWM_manual(PWM_Pins[1], dc_levels[1]);
+  PWM_Instance[1]->setPWM_manual_Fast(PWM_Pins[1], dc_levels[1]);
 
   dc_levels[2] = 500 +  scale2  * int_sine_step_value / div_const;
-  PWM_Instance[2]->setPWM_manual(PWM_Pins[2], dc_levels[2]);
+  PWM_Instance[2]->setPWM_manual_Fast(PWM_Pins[2], dc_levels[2]);
   dc_levels[3] = 500 +  scale3  * int_sine_step_value / div_const;
-  PWM_Instance[3]->setPWM_manual(PWM_Pins[3], dc_levels[3]);
+  PWM_Instance[3]->setPWM_manual_Fast(PWM_Pins[3], dc_levels[3]);
 
   dc_levels[4] = 500 +  scale4  * int_sine_step_value / div_const;
-  PWM_Instance[4]->setPWM_manual(PWM_Pins[4], dc_levels[4]);
+  PWM_Instance[4]->setPWM_manual_Fast(PWM_Pins[4], dc_levels[4]);
   dc_levels[5] = 500 +  scale5  * int_sine_step_value / div_const;
-  PWM_Instance[5]->setPWM_manual(PWM_Pins[5], dc_levels[5]);
+  PWM_Instance[5]->setPWM_manual_Fast(PWM_Pins[5], dc_levels[5]);
 
   dc_levels[6] = 500 + amp6 * int_sine_step_value / div_const; // reference +sinewave output
-  PWM_Instance[6]->setPWM_manual(PWM_Pins[6], dc_levels[6]);
+  PWM_Instance[6]->setPWM_manual_Fast(PWM_Pins[6], dc_levels[6]);
   dc_levels[7] = 500 + amp7 * int_sine_step_value / div_const; // reference -sinewave output
-  PWM_Instance[7]->setPWM_manual(PWM_Pins[7], dc_levels[7]);
+  PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
 #endif
 
@@ -455,6 +462,13 @@ void  printDetails(const char * name, int index, float angle, float scaleA, floa
   tft.println(scaleB);
 }
 
+// screensaver
+void displayDisable(void)
+{
+    tft.fillScreen(ST77XX_BLACK);
+    tft.setTextColor(ST77XX_BLACK);
+}
+
 // show common system settings and individual PWM channel settings
 void displayUpdate(void)
 {
@@ -462,7 +476,6 @@ void displayUpdate(void)
   tft.setTextColor(ST77XX_GREEN);
   tft.setTextSize(2);
   tft.println();
-
   Serial.println("=====================");
 
   printDetails("Fine",   0, angle0, scale0, scale1); 
@@ -573,14 +586,17 @@ void setup()
   
   build_sintable();
 
-//  Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
-//  Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
-//  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
+#if 0
+  Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
+  Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
+  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
 
-//  Serial.print(F("\nStarting PWM_Waveform_Fast on "));
-//  Serial.println(BOARD_NAME);
-//  Serial.println(RP2040_PWM_VERSION);
+  Serial.print(F("\nStarting PWM_Waveform_Fast on "));
+  Serial.println(BOARD_NAME);
+  Serial.println(RP2040_PWM_VERSION);
+#endif
 
+  pinMode(pinLED, OUTPUT);
   pinMode(pinOpSync, OUTPUT);
   pinMode(pinIpTrig, INPUT_PULLUP);
   pinMode(ButtonA, INPUT_PULLUP);
@@ -610,11 +626,6 @@ void setup()
 
       PWM_LOGDEBUG5("TOP =", top, ", DIV =", div, ", CPU_freq =", PWM_Instance[index]->get_freq_CPU());
     }
-    else
-    {
-      Serial.println();
-    }
-
   }
 
   parser.registerCommand("rep", "",  &cmd_report);
@@ -636,7 +647,7 @@ void setup()
   Serial.println();
   Serial.println("to set absolute film transport index value:");
   Serial.println("registered command: abs <double> ");
-  Serial.println("to set step value (+ve or ive) used for automatic increment:");
+  Serial.println("to set step value (+ve or -ve) used for automatic increment:");
   Serial.println("registered command: step <double> ");
   Serial.println("Note , Button A to enable automatic increment");
   Serial.println("Note , Button B to disable automatic increment");
@@ -653,7 +664,7 @@ void setup()
   // Interval in microsecs
   if (ITimer0.attachInterruptInterval(sine_table.timer_interval, TimerHandler0))
   {
-//    Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
+    Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
   }
   else
     Serial.println(F("Can't set ITimer0. Select another freq. or timer"));
@@ -698,13 +709,14 @@ void loop()
   encoder.tick();
 
   int newPos = encoder.getPosition();
-  if (pos != newPos) {
-  #if 0
+  if (pos != newPos) 
+  {
+    #if 0
     Serial.print("pos:");
     Serial.print(newPos);
     Serial.print(" dir:");
     Serial.println((int)(encoder.getDirection()));
-  #endif
+    #endif
     pos = newPos;
   
     if(!automatic)
@@ -712,9 +724,8 @@ void loop()
       absolute = pos * autostep;
       abs2res(absolute, &angle0, &angle1, &angle2);
       anglesUpdate();
-   }
-
-
+    }
+    awaken = true;
   } // if
 
   if(buttonAPress)
@@ -723,6 +734,7 @@ void loop()
     buttonAPress= false;
     automatic = 1;
     displayUpdate();
+    awaken = true;
   }
 
   if(buttonBPress)
@@ -732,6 +744,7 @@ void loop()
     automatic = 0;
     encoder.setPosition(absolute/autostep); // update encode value after auto run
     displayUpdate();
+    awaken = true;
   }
 
   if(automatic)
@@ -752,6 +765,26 @@ void loop()
   // update display every second if absolute value has changed
   if (millis() - refresh_time > 1000) 
   {
+    static bool ledon = true;
+    digitalWrite(pinLED,ledon); // LED pulse output
+    if(awaken == true)
+    {
+      sleeptimer = SLEEPTIME;
+      awaken = false;
+    }
+    if(sleeptimer > 0)
+    {
+      sleeptimer -= 1;
+      asleep = false;
+      ledon = true;
+    }
+    else
+    {
+      ledon = ! ledon;
+      asleep = true;
+      displayDisable();
+    }
+
     if(old_absolute != absolute)
     {
       old_absolute = absolute;
@@ -760,9 +793,18 @@ void loop()
     refresh_time = millis();
   }
 
+#if 0
   // Use at low freq to check
   printPWMInfo(PWM_Instance[0]);
   printPWMInfo(PWM_Instance[1]);
-  
+  printPWMInfo(PWM_Instance[2]);
+  printPWMInfo(PWM_Instance[3]);
+  printPWMInfo(PWM_Instance[4]);
+  printPWMInfo(PWM_Instance[5]);
+  printPWMInfo(PWM_Instance[6]);
+  printPWMInfo(PWM_Instance[7]);
+  delay(500);
+#endif
+
 }
 // end

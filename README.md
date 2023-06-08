@@ -55,6 +55,44 @@ Present version drives three pairs of sine/cosine outputs, and an additional pai
 Resolver simulation is controlled by serial commands, push buttons, and a rotary encoder.
 Console is accesed by USB at 115200 bps with a terminal program or the arduino IDE.
 
+### PWM
+
+#### RC Filter
+
+PWM frequency is set to 100kHz by dividing the pico clock (133 Mhz) by 1330
+
+The output is then filtered to remove the individuel pulses leaving the mean voltage proportional to the PWM duty cycle.
+
+[calculation](http://sim.okawa-denshi.jp/en/Fkeisan.htm) R=1k, C=100n,  Cut-off frequency: fc = 1591.5Hz 
+
+![RC-Filter](images/RC-Filter.png)
+
+#### 400 Hz generation
+
+The PWM output duty cycle is modified regularly triggered by a timer set to a rate equal to the desired output frequency (400Hz) divided by the number of samples in a single cycle (36 ), or 69.5 uS
+
+Unfortunateley the timer rate has to be an integer when using the arduino and so 69 or 70 have to be used. other possabilities are shown below, note 20 samples give an accurate 400Hz at the expense of a slightly steppy resultaing waveform:
+```
+36 table entries,  === 36 samples per cycle
+1E6Hz  / 400Hz / (36) = 69.444 uS timer interval
+69 = 402.576 Hz
+70 = 396.825 Hz
+
+40 table entries,  === 40 samples per cycle
+1E6Hz  / 400Hz / (40) = . uS timer interval
+62 = 403.2 Hz
+64 = 396.8 Hz
+
+20 table entries,  === 20 samples per cycle
+1E6Hz  / 400Hz / (20) = . uS timer interval
+125 = 400.0 Hz
+```
+The choice of frequency and sample count is made by constants in the program code defining the sine table generation and timer duration.
+
+The waveform amplitude is obtained by reading a sine lookup table generated at program start, modified amplitudes for the resolver angles are made using the library sin and cos functions, speed is not an issue here as these calculations are done in the main program loop - not in the timer function.
+
+#### Serial commands
+
 Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
 
 |Command||
