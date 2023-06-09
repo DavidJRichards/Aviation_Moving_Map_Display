@@ -13,6 +13,17 @@
   https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
   https://github.com/Uberi/Arduino-CommandParser
 
+  // Rotary Encoder library
+  http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx
+
+  // specific info about explorer board
+  https://forums.pimoroni.com/t/program-the-pico-explorer-with-arduino-ide/17983
+
+  https://www.mikrocontroller.net/attachment/346746/AND9282-D_AC_Zero_Crossing.pdf
+  https://www.edn.com/mains-driven-zero-crossing-detector-uses-only-a-few-high-voltage-parts/
+  https://d1.amobbs.com/bbs_upload782111/files_40/ourdev_643643NSY57M.pdf
+  https://www.edn.com/a-circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period/
+
   PWM_Waveform_Fast.ino
   For RP2040 boards
   Written by Khoi Hoang
@@ -143,11 +154,14 @@ float PWM_dutyCycle = 50.0f;
 // 125 = 400.0 Hz
 
 #define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
+// choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
+#define SYNC_OFFSET_COUNT 2
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
   int sinewave_frequency=SINEWAVE_FREQUENCY_HZ;
+  int sync_offset=SYNC_OFFSET_COUNT;
   //uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
   float factors[NUM_SINE_ELEMENTS];
   int16_t levels[NUM_SINE_ELEMENTS];
@@ -363,8 +377,8 @@ bool TimerHandler0(struct repeating_timer *t)
 // ISR for frequency sync input
 void syncInput(void) {
   // try to limit jitter here due to noise on input pin
-  if(step_index>sine_table.num_elements*3/4)
-    step_index=0;
+//  if(step_index>sine_table.num_elements*3/4)
+    step_index=sine_table.sync_offset;
 }
 
 // ISR for button presses
@@ -598,12 +612,11 @@ void setup()
 
   pinMode(pinLED, OUTPUT);
   pinMode(pinOpSync, OUTPUT);
-  pinMode(pinIpTrig, INPUT_PULLUP);
+  pinMode(pinIpTrig, INPUT);
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
   attachInterrupt(pinIpTrig, syncInput, RISING);
-//  attachInterrupt(pinIpTrig, syncInput, FALLING);
   attachInterrupt(ButtonA, buttonAPressed, RISING);
   attachInterrupt(ButtonB, buttonBPressed, RISING);
   // can be CHANGE or LOW or RISING or FALLING or HIGH
@@ -627,6 +640,9 @@ void setup()
       PWM_LOGDEBUG5("TOP =", top, ", DIV =", div, ", CPU_freq =", PWM_Instance[index]->get_freq_CPU());
     }
   }
+      Serial.print("PWM Actual frequency[7] = ");
+      Serial.print(PWM_Instance[7]->getActualFreq()/10);
+      Serial.println(" kHz");
 
   parser.registerCommand("rep", "",  &cmd_report);
   parser.registerCommand("fin", "d", &cmd_fin);

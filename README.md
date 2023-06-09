@@ -91,6 +91,40 @@ The choice of frequency and sample count is made by constants in the program cod
 
 The waveform amplitude is obtained by reading a sine lookup table generated at program start, modified amplitudes for the resolver angles are made using the library sin and cos functions, speed is not an issue here as these calculations are done in the main program loop - not in the timer function.
 
+#### Synchronisation
+
+The 400 Hz waveform generators can be synchronised to an external 400 Hz signal, the signal is applied to a zero crossing detector, the output of which rises to 3v3 whenever the input voltage rizes positive above 0v. The pico interrupt input needs to be set to trigger on the rising edge.
+
+Photo shows 3.3 V output rising edge coincident with zero crossing of input 115 V~ 400 Hz, trailing edge is not well defined and unused.
+
+![zero-crossing](images/zero-crossing.png)
+
+Video shows input voltage being raised from 0 to 115 VAC 400Hz
+
+[Youtube ZCD](https://youtube.com/shorts/z_t_Pi9b5Q8?feature=shareL)
+
+####   Improved Isolated ZC Schematic
+
+![improved-opto-detector](./images/improved-opto-detector.png)
+
+#####Revised parts list:
+
+|Part|Value |
+|--|--|
+|Q1|BC639|
+|Q2|BC639|
+|OC1|4N33|
+|R1|22k|
+|C1|2.2F|
+|ZD1|9V1|
+|R2|100k|
+|R3|470R|
+|R4|2.2k|
+
+
+
+[AND9282 - Mains Synchronization for PLC Modems](https://www.mikrocontroller.net/attachment/346746/AND9282-D_AC_Zero_Crossing.pdf)
+
 #### Serial commands
 
 Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
@@ -235,6 +269,14 @@ A Reference pulse output is available to trigger the oscilloscope.
  * Note: Alt pins are equivalent functions on RPMD module
  * Additional information supplied by Erik Baigar see: [http://www.baigar.de/TornadoComputerUnit/TimeLine.html#20130205](http://www.baigar.de/TornadoComputerUnit/TimeLine.html#20130205)
 
+##### Power requirements
+
+ * 115 V 400Hz 0.5 to 1.0 amp (depends on lamp brightness)
+ * 28 VDC <100 mA
+ * 12-0-12 V 400 Hz resolver reference signal
+ * 11 V 400 Hz resolver signals, two per channel, 5 channels
+ * 28 VDC relay inputs ( pin 42 needed to power on unit )
+
 <br>
 
 |Pin #|Alt #|Function  |Note          |
@@ -291,8 +333,8 @@ A Reference pulse output is available to trigger the oscilloscope.
 |45| 45  | common      |Heading-com   |
 |46||||
 |47||||
-|48| 48  | 26V 400Hz   |Reference     |
-|49| 49  | 0V 400Hz    |Ref.return    |
+|48| 48  | +12V 400Hz  |Reference+wrt 0V|
+|49| 49  | -12V 400Hz  |Reference-wrt 0V|
 |50||||
 |51| 51  | a           |Fine-a        |
 |52| 52  | b           |Fine-b        |
