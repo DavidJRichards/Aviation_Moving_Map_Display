@@ -176,6 +176,7 @@ RPI_PICO_Timer ITimer0(0);
 //RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 // todo: use something like these ...
 struct PWM_ {
+  const char    *name;
   RP2040_PWM*    PWM_Instance;
   const uint32_t PWM_pin;       // pin number to initialise to
   float          PWM_duty;      // working PWM duty cycle variable
@@ -199,10 +200,10 @@ struct transport_ {
 
 struct transport_ transport = {
 // name,      instance, pin, duty1, instance, pin, duty2, angle, amp1, amp2, duty1, duty2  
-  "Fine",     NULL,     0,   0.0,   NULL,     2,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, duty, instance, pin, duty, angle, scale1, scale2
-  "Medium",   NULL,     4,   0.0,   NULL,     6,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "Coarse",   NULL,     1,   0.0,   NULL,     3,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "Reference",NULL,    21,   0.0,   NULL,     7,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Fine",     "sin",  NULL,     0,   0.0,   "cos",  NULL,     2,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, duty, instance, pin, duty, angle, scale1, scale2
+  "Medium",   "sin",  NULL,     4,   0.0,   "cos",  NULL,     6,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Coarse",   "sin",  NULL,     1,   0.0,   "cos",  NULL,     3,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Reference","ref+", NULL,    21,   0.0,   "ref-", NULL,     7,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
   0L,                                                                          // absolute
   10,                                                                          // autostep
   false,                                                                       // automatic
@@ -442,15 +443,20 @@ void displayUpdate(void)
     Serial.print(", ");
     Serial.println(transport.resolvers[i].level[1]);
   #endif
-    tft.setCursor(0, 0 + i * 55);
-    tft.println(transport.resolvers[i].name);
-    tft.print("Angle = ");
-    tft.println(transport.resolvers[i].angle);
+    tft.setCursor(0, 0 + i * 50);
+    tft.print(transport.resolvers[i].name);
+    tft.print(" = ");
+    tft.print(transport.resolvers[i].angle);
+    tft.println("\xF7"); // degree symbol
 
-    tft.print("Scale ");
-    tft.print(transport.resolvers[i].level[0]);
-    tft.print(", ");
-    tft.println(transport.resolvers[i].level[1]);
+    tft.print(transport.resolvers[i].PWM[0].name);
+    tft.print("=");
+    tft.print(transport.resolvers[i].level[0],1);
+    tft.print("% ");
+    tft.print(transport.resolvers[i].PWM[1].name);
+    tft.print("=");
+    tft.print(transport.resolvers[i].level[1],1);
+    tft.println("%");
   }
 
   absolute = res2abs(transport.resolvers[0].angle, transport.resolvers[1].angle, transport.resolvers[2].angle);

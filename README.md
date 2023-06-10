@@ -148,7 +148,7 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 
 #### Status display with buttons
 
-![LCD status](./images/LCD_status.jpg)
+![LCD status](./images/LCD_status2.jpg)
 
 [Arduino sketch](./software/pico_400hz_sine_PWM/pico_400hz_sine_PWM.ino)
 
@@ -182,6 +182,37 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |25|LED|
 |27|Sync OP|
 |28|Trig IP|
+
+### Amplifier interconnections
+
+|Channel|Res|PWM|GPIO|Amp|R-L|Pin|
+|-------|---|---|----|---|---|---|
+|Fine   |sin| 0 |  0 | 1 | R |51 |
+|Fine   |cos| 1 |  2 | 1 | L |52 |
+|Fine   |com| - |  - | - | C |53 |
+|Medium |sin| 2 |  4 | 2 | R |59 |
+|Medium |cos| 3 |  6 | 2 | L |60 |
+|Medium |com| - |  - | - | C |61 |
+|Coarse |sin| 4 |  1 | 3 | R |64 |
+|Coarse |cos| 5 |  3 | 3 | L |65 |
+|Coarse |com| - |  - | - | C |66 |
+|Ref    | - | 6 | 21 | 4 | R |48?|
+|Ref    | + | 7 |  7 | 4 | L |49?|
+|Ref    |com| - |  - | - | C |32 |
+
+#### Initial conditions
+
+ * After reset the module starts at absolute position of 0
+ * sin outputs are zero amplitude, cos outputs are +ve maximum
+ * -ve ref output is positive going at start of trigger output
+ * +ve ref output is negative going at start of trigger output  
+ * sync output pulse positive edge is coincident with star of positive going cos 0 output
+ * sync pulse input triggers start of positive going +ve ref output, cos 0 outputs
+ * as angles increase from 0 sin outputs start to increase in positive direction
+ * as angles increade positice cos output decreases
+ 
+
+
 
 <br>
 #### Absolute transport position encoding
@@ -237,7 +268,7 @@ A reference 400Hz is availabe on a seventh channel (unused)
 
 A Reference pulse output is available to trigger the oscilloscope.
 
-![breadboard](./images/breadboard.jpg)
+![breadboard](./images/breadboard2.jpg)
 
 ![oscilloscope](./images/oscilloscope.jpg)
 
