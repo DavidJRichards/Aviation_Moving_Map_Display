@@ -75,9 +75,6 @@ MyCommandParser parser;
 
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
-// This example to demo the new function setPWM_manual(uint8_t pin, uint16_t top, uint8_t div, uint16_t level, bool phaseCorrect = false)
-// used to generate a waveform. Check https://github.com/khoih-prog/RP2040_PWM/issues/6
-
 #if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
       defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED)
 
@@ -131,7 +128,7 @@ RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 #define pin20         15    // PWM channel 7B (button y)
 */
 
-uint16_t PWM_data_idle_top = 1330; //100 kHz PWM
+uint16_t PWM_data_idle_top = 1330; // to give 100 kHz PWM with 133MHz clock
 uint8_t PWM_data_idle_div = 1;
 // You can select any value
 uint16_t PWM_data_idle = 124;
@@ -156,7 +153,8 @@ float PWM_dutyCycle = 50.0f;
 #define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
 // choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
-#define SYNC_OFFSET_COUNT 2
+#define SYNC_OFFSET_COUNT 4
+#define PULSE_OFFSET_COUNT 2
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
@@ -169,11 +167,8 @@ struct sine_table_ {
   float stepsize;                       // calculated in build sinetable function
 } sine_table;
 
-
 bool buttonAPress = false;
 bool buttonBPress = false;
-//unsigned long buttonATime = 0; // To prevent debounce
-//unsigned long buttonBTime = 0; // To prevent debounce
 
 // Init RPI_PICO_Timer, can use any from 0-15 pseudo-hardware timers
 RPI_PICO_Timer ITimer0(0);
@@ -181,85 +176,56 @@ RPI_PICO_Timer ITimer0(0);
 //RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 // todo: use something like these ...
 struct PWM_ {
-  RP2040_PWM* PWM_Instance;
-  const uint32_t PWM_pin;
-  float PWM_duty;
+  RP2040_PWM*    PWM_Instance;
+  const uint32_t PWM_pin;       // pin number to initialise to
+  float          PWM_duty;      // working PWM duty cycle variable
 };
 
 struct resolver_ {
-  const char *name;
-  struct PWM_ PWM[2];
-  float angle;
-  float scale2[2];
- };
-
-struct reference_ {
-  const char *name;
-  struct PWM_ PWM[1];
+  const char    *name;
+  struct PWM_   PWM[2];         // PWM channels for this resolver
+  float         angle;          // target resolver angle
+  int           amplitude[2];   // channel 400Hz sin/cos amplitude vectors (int +- 500)
+  float         level[2];       // channel 400Hz sin/cos amplitude vectors (float +- 50.0)
  };
 
 struct transport_ {
-  struct resolver_ resolvers[3];
-  struct reference_ reference;
-  long absolute;
-  int autostep;
-  int automatic;
-  int autodelay;
+  struct resolver_ resolvers[4];
+  long absolute;                // moving map absolute position
+  int  autostep;                // step size for automatic (or encoder) movement
+  bool  automatic;               // enable automatic map movement (E/W)
+  int  autodelay;               // time between automatic steps
 };        
 
 struct transport_ transport = {
-  "fine",     NULL, 0, 0.0, NULL, 2, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "medium",   NULL, 4, 0.0, NULL, 6, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "coarse",   NULL, 1, 0.0, NULL, 3, 0.0, 0.0, 0.0, 0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "reference",NULL, 28, 0.0,                              // name, instance, pin, level
-  0L,                                                     // absolute
-  10,                                                     // autostep
-  0,                                                      // automatic
-  10,                                                     // autodelay
+// name,      instance, pin, duty1, instance, pin, duty2, angle, amp1, amp2, duty1, duty2  
+  "Fine",     NULL,     0,   0.0,   NULL,     2,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, duty, instance, pin, duty, angle, scale1, scale2
+  "Medium",   NULL,     4,   0.0,   NULL,     6,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Coarse",   NULL,     1,   0.0,   NULL,     3,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Reference",NULL,    21,   0.0,   NULL,     7,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  0L,                                                                          // absolute
+  10,                                                                          // autostep
+  false,                                                                       // automatic
+  10,                                                                          // autodelay
 };
+
 
 char dashLine[] = "=====================================================================";
 
 // index into 400Hz sine table for PWM frequency generation
 volatile int step_index = 0; 
 
-// scaling multipliers of each resolver signal
-float scale0;
-float scale1;
-float scale2;
-float scale3;
-float scale4;
-float scale5;
-float scale6;
-float scale7;
-float scale8;
-
-float amp0;
-float amp1;
-float amp2;
-float amp3;
-float amp4;
-float amp5;
-float amp6;
-float amp7;
-float amp8;
-
-// resolver angles
-float angle0;
-float angle1;
-float angle2;
-
-// menu variables
-float autostep=1;
-int automatic=0;
-int autodelay=10;
-float absolute=0;
+// menu variables TODO use transport structure variables
+float autostep =  1;
+bool  automatic = false;
+int   autodelay = 10;
+float absolute =  0;
 
 // screensaver
 #define SLEEPTIME 300
-bool awaken = false;
-bool asleep = false;
-int sleeptimer = SLEEPTIME;
+bool awaken =     false;
+bool asleep =     false;
+int sleeptimer =  SLEEPTIME;
 
 void build_sintable(void)
 {
@@ -269,9 +235,8 @@ void build_sintable(void)
 
   for(n=0; n<sine_table.num_elements; n++)
   {
-//    sine_table.elements[n] = int(128 + (sin(M_PI*(n*sine_table.stepsize)/180.0) * 127));
-    sine_table.factors[n] = int((sin(M_PI*(n*sine_table.stepsize)/180.0) * 128)) / 256.0;
-    sine_table.levels[n] = int((sin(M_PI*(n*sine_table.stepsize)/180.0) * 512));
+    sine_table.factors[n] =   (sin(M_PI*(n*sine_table.stepsize)/180.0) * 128) / 256.0;  // table entries -1.0 to + 1.0
+    sine_table.levels[n] = int(sin(M_PI*(n*sine_table.stepsize)/180.0) * 512);          // table entries -512 to +512
   }
 
 #if 1
@@ -305,100 +270,93 @@ bool TimerHandler0(struct repeating_timer *t)
   int16_t int_sine_step_value;
   uint16_t dc_levels[8];
   float dc_percent[8];
-  step_index++;
+
   if(step_index >= sine_table.num_elements)
   {
     step_index = 0;
   }
 
-#if 0 // use float percentage 0 to 100
+#if 0 // use float percentage 0.0 to 100.0
+  #define MID_POINT_FLOAT 50.0
+
 // center resultant waveform around 50% PWM full scale is 100.0 * ( sine256[step256%256] / 256.0f )
   float_sine_step_value = ( sine_table.factors[step_index] ); 
 
   // fine resolver output
-  dc_percent[0] = 50.0 +  scale0 * float_sine_step_value;
+  dc_percent[0] = MID_POINT_FLOAT +  transport.resolvers[0].level[0] * float_sine_step_value;
   PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], dc_percent[0]);
-  dc_percent[1] = 50.0 +  scale1 * float_sine_step_value;
+  dc_percent[1] = MID_POINT_FLOAT +  transport.resolvers[0].level[1] * float_sine_step_value;
   PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], dc_percent[1]);
 
   // medium resolver output
-  dc_percent[2] = 50.0 + scale2 * float_sine_step_value;
+  dc_percent[2] = MID_POINT_FLOAT + transport.resolvers[1].level[0] * float_sine_step_value;
   PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], dc_percent[2]);
-  dc_percent[3] = 50.0 + scale3 * float_sine_step_value;  
+  dc_percent[3] = MID_POINT_FLOAT + transport.resolvers[1].level[1] * float_sine_step_value;  
   PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], dc_percent[3]);
 
   // coarse resolver output
-  dc_percent[4] = 50.0 + scale4 * float_sine_step_value;
+  dc_percent[4] = MID_POINT_FLOAT + transport.resolvers[2].level[0] * float_sine_step_value;
   PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], dc_percent[4]);
-  dc_percent[5] = 50.0 + scale5 * float_sine_step_value;  
+  dc_percent[5] = MID_POINT_FLOAT + transport.resolvers[2].level[1] * float_sine_step_value;  
   PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], dc_percent[5]);
  
   // reference channel
-  dc_percent[6] = 50.0 + amp6 * float_sine_step_value; // reference sinewave output
+  dc_percent[6] = MID_POINT_FLOAT + transport.resolvers[3].level[0] * float_sine_step_value; // reference sinewave output
   PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], dc_percent[6] );
-  dc_percent[7] = 50.0 + amp7 * float_sine_step_value; // reference sinewave output
+  dc_percent[7] = MID_POINT_FLOAT + transport.resolvers[3].level[1] * float_sine_step_value; // reference sinewave output
   PWM_Instance[7]->setPWM_DCPercentage_manual(PWM_Pins[7], dc_percent[7] );
 
 #else // use int level 0 to 1000 TODO, maybe faster
-// full level is 1000, input scale is +- 50
-// levels table is integer 0 to 1000
+#define DIV_CONST 1024 
+#define MID_POINT_INT 500
   int_sine_step_value = ( sine_table.levels[step_index] ); 
 
-#define div_const 64    // how to choose this value ??
-
 // manual level is integer 0 to 1000 (actually 800 due to output voltage limitation problem)  
-  dc_levels[0] = 500 +  scale0  * int_sine_step_value / div_const;
+// sine_table is +- 512 ( 10 bits )
+// scale is +- 500 (10 bits )
+// product is 20 bits - needs to be 10 - so divide by 10 bits 
+  dc_levels[0] = MID_POINT_INT +    transport.resolvers[0].amplitude[0]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[0]->setPWM_manual_Fast(PWM_Pins[0], dc_levels[0]);
-  dc_levels[1] = 500 +  scale1  * int_sine_step_value / div_const;
+  dc_levels[1] = MID_POINT_INT +    transport.resolvers[0].amplitude[1]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[1]->setPWM_manual_Fast(PWM_Pins[1], dc_levels[1]);
 
-  dc_levels[2] = 500 +  scale2  * int_sine_step_value / div_const;
+  dc_levels[2] = MID_POINT_INT +    transport.resolvers[1].amplitude[0]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[2]->setPWM_manual_Fast(PWM_Pins[2], dc_levels[2]);
-  dc_levels[3] = 500 +  scale3  * int_sine_step_value / div_const;
+  dc_levels[3] = MID_POINT_INT +    transport.resolvers[1].amplitude[1]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[3]->setPWM_manual_Fast(PWM_Pins[3], dc_levels[3]);
 
-  dc_levels[4] = 500 +  scale4  * int_sine_step_value / div_const;
+  dc_levels[4] = MID_POINT_INT +    transport.resolvers[2].amplitude[0]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[4]->setPWM_manual_Fast(PWM_Pins[4], dc_levels[4]);
-  dc_levels[5] = 500 +  scale5  * int_sine_step_value / div_const;
+  dc_levels[5] = MID_POINT_INT +    transport.resolvers[2].amplitude[1]  * int_sine_step_value / DIV_CONST;
   PWM_Instance[5]->setPWM_manual_Fast(PWM_Pins[5], dc_levels[5]);
 
-  dc_levels[6] = 500 + amp6 * int_sine_step_value / div_const; // reference +sinewave output
+  dc_levels[6] = MID_POINT_INT +   transport.resolvers[3].amplitude[0] * int_sine_step_value / DIV_CONST; // reference +sinewave output
   PWM_Instance[6]->setPWM_manual_Fast(PWM_Pins[6], dc_levels[6]);
-  dc_levels[7] = 500 + amp7 * int_sine_step_value / div_const; // reference -sinewave output
+  dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / DIV_CONST; // reference -sinewave output
   PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
 #endif
 
-  digitalWrite(pinOpSync,step_index==0); // sync pulse output
-
+  digitalWrite(pinOpSync,step_index == PULSE_OFFSET_COUNT); // sync pulse output
+  step_index++;
   return true;
 }
 
 // ISR for frequency sync input
 void syncInput(void) {
-  // try to limit jitter here due to noise on input pin
-//  if(step_index>sine_table.num_elements*3/4)
+    ITimer0.stopTimer();
     step_index=sine_table.sync_offset;
+    ITimer0.restartTimer();
 }
 
 // ISR for button presses
-// n.b. debounce disabled
+// n.b. no debounce
 
 void buttonAPressed() {
-  //Set timer to work for your loop code time   
-//  if (millis() - buttonTime > 250) {
-    //button press ok
-    buttonAPress= true;
-//  }
-//  buttonTime = millis();
+  buttonAPress= true;
 }
 void buttonBPressed() {
-  //Set timer to work for your loop code time   
-//  if (millis() - buttonTime > 250) {
-    //button press ok
-    buttonBPress= true;
-//  }
-//  buttonTime = millis();
+  buttonBPress= true;
 }
 
 // these constants represent the gearing between the resolvers 
@@ -419,9 +377,10 @@ unsigned long res2abs(int fine, int medium, int coarse)
 // convert required absolute film position to resolver angles
 void abs2res(long absolute, float *fine, float *medium, float *coarse)
 {
-        *coarse = (absolute / ratio2) - offset_coarse;
-        *medium = (absolute / ratio1) % 360;
-        *fine  =   absolute           % 360;
+  if(absolute < 0) absolute = 0;
+  *coarse = (absolute / ratio2) - offset_coarse;
+  *medium = (absolute / ratio1) % 360;
+  *fine  =   absolute           % 360;
 }        
 
 // transfer required resolver angles to PWM scale multipliers
@@ -429,51 +388,28 @@ void anglesUpdate(void)
 {
   float target;
 
-  target = fmod(angle0, 360) * M_PI/180.0;
-  scale0=(sin(target)*50.0);
-  scale1=(cos(target)*50.0);
-  amp0 = ( 50.0 - scale0 ) + ( 2 * scale0 );
-  amp1 = ( 50.0 - scale1 ) + ( 2 * scale1 );
+  target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
+  transport.resolvers[0].amplitude[0] = sin(target) * 500;
+  transport.resolvers[0].amplitude[1] = cos(target) * 500;
+  transport.resolvers[0].level[0] = sin(target) * 50.0;
+  transport.resolvers[0].level[1] = cos(target) * 50.0;
 
-  target = fmod(angle1, 360) * M_PI/180.0;
-  scale2=(sin(target)*50.0);
-  scale3=(cos(target)*50.0);
-  amp2 = ( 50.0 - scale2 ) + ( 2 * scale2 );
-  amp3 = ( 50.0 - scale3 ) + ( 2 * scale3 );
+  target = fmod(transport.resolvers[1].angle, 360) * M_PI/180.0;
+  transport.resolvers[1].amplitude[0] = sin(target) * 500;
+  transport.resolvers[1].amplitude[1] = cos(target) * 500;
+  transport.resolvers[1].level[0] = sin(target) * 50.0;
+  transport.resolvers[1].level[1] = cos(target) * 50.0;
 
-  target = fmod(angle2, 360) * M_PI/180.0;
-  scale4=(sin(target)*50.0);
-  scale5=(cos(target)*50.0);
-  amp4 = ( 50.0 - scale4 ) + ( 2 * scale4 );
-  amp5 = ( 50.0 - scale5 ) + ( 2 * scale5 );
+  target = fmod(transport.resolvers[2].angle, 360) * M_PI/180.0;
+  transport.resolvers[2].amplitude[0] = sin(target) * 500;
+  transport.resolvers[2].amplitude[1] = cos(target) * 500;
+  transport.resolvers[2].level[0] = sin(target) * 50.0;
+  transport.resolvers[2].level[1] = cos(target) * 50.0;
  
-  amp6 = +50.0;
-  amp7 = -50.0;
-}
-
-// show details for individual PWM channel settings
-void  printDetails(const char * name, int index, float angle, float scaleA, float scaleB) 
-{
-#if 1
-  Serial.println();
-  Serial.print(name);
-  Serial.print(" Angle = ");
-  Serial.println(angle);
-
-  Serial.print("Scales ");
-  Serial.print(scaleA);
-  Serial.print(", ");
-  Serial.println(scaleB);
-#endif
-  tft.setCursor(0, 0 + index * 55);
-  tft.println(name);
-  tft.print("Angle = ");
-  tft.println(angle);
-
-  tft.print("Scale ");
-  tft.print(scaleA);
-  tft.print(", ");
-  tft.println(scaleB);
+  transport.resolvers[3].amplitude[0] = 500.0;
+  transport.resolvers[3].amplitude[1] = -500.0;
+  transport.resolvers[3].level[0] = +50.0;
+  transport.resolvers[3].level[1] = -50.0;
 }
 
 // screensaver
@@ -492,11 +428,34 @@ void displayUpdate(void)
   tft.println();
   Serial.println("=====================");
 
-  printDetails("Fine",   0, angle0, scale0, scale1); 
-  printDetails("Medium", 1, angle1, scale2, scale3); 
-  printDetails("Coarse", 2, angle2, scale4, scale5); 
+// show details for individual PWM channel settings
+  for (int i = 0; i < 3; i++)
+  {
+  #if 1
+    Serial.println();
+    Serial.print(transport.resolvers[i].name);
+    Serial.print(" Angle = ");
+    Serial.println(transport.resolvers[i].angle);
 
-  absolute = res2abs(angle0, angle1, angle2);
+    Serial.print("Scales ");
+    Serial.print(transport.resolvers[i].level[0]);
+    Serial.print(", ");
+    Serial.println(transport.resolvers[i].level[1]);
+  #endif
+    tft.setCursor(0, 0 + i * 55);
+    tft.println(transport.resolvers[i].name);
+    tft.print("Angle = ");
+    tft.println(transport.resolvers[i].angle);
+
+    tft.print("Scale ");
+    tft.print(transport.resolvers[i].level[0]);
+    tft.print(", ");
+    tft.println(transport.resolvers[i].level[1]);
+  }
+
+  absolute = res2abs(transport.resolvers[0].angle, transport.resolvers[1].angle, transport.resolvers[2].angle);
+
+// show common detail information
 #if 1
   Serial.println();
   Serial.print("Absolute = ");
@@ -511,17 +470,17 @@ void displayUpdate(void)
   Serial.print("Auto = ");
   Serial.println(automatic);
 #endif
-
-  tft.print("Absolute= ");
+  tft.println();
+  tft.print("Absolute = ");
   tft.println(absolute);
 
-  tft.print("Step= ");
+  tft.print("Step =     ");
   tft.println(autostep);
 
-  tft.print("Delay= ");
+  tft.print("Delay =    ");
   tft.println(autodelay);
 
-  tft.print("Automatic= ");
+  tft.print("Auto =     ");
   tft.println(automatic);
 }
 
@@ -533,7 +492,7 @@ void cmd_report(MyCommandParser::Argument *args, char *response) {
 
 void cmd_abs(MyCommandParser::Argument *args, char *response) {
   absolute = args[0].asDouble;
-  abs2res(absolute, &angle0, &angle1, &angle2);
+  abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
   anglesUpdate();
   displayUpdate();
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
@@ -546,7 +505,7 @@ void cmd_step(MyCommandParser::Argument *args, char *response) {
 }
 
 void cmd_automatic(MyCommandParser::Argument *args, char *response) {
-  automatic = args[0].asDouble;
+  automatic = ! automatic;
   displayUpdate();
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
@@ -558,21 +517,21 @@ void cmd_autodelay(MyCommandParser::Argument *args, char *response) {
 }
 
 void cmd_fin(MyCommandParser::Argument *args, char *response) {
-  angle0 = args[0].asDouble;
+  transport.resolvers[0].angle = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   anglesUpdate();
   displayUpdate();
 }
 
 void cmd_med(MyCommandParser::Argument *args, char *response) {
-  angle1 = args[0].asDouble;
+  transport.resolvers[1].angle = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   anglesUpdate();
   displayUpdate();
 }
 
 void cmd_coa(MyCommandParser::Argument *args, char *response) {
-  angle2 = args[0].asDouble;
+  transport.resolvers[2].angle = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
   anglesUpdate();
   displayUpdate();
@@ -600,26 +559,21 @@ void setup()
   
   build_sintable();
 
-#if 0
-  Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
-  Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
-  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
-
-  Serial.print(F("\nStarting PWM_Waveform_Fast on "));
-  Serial.println(BOARD_NAME);
-  Serial.println(RP2040_PWM_VERSION);
-#endif
-
   pinMode(pinLED, OUTPUT);
   pinMode(pinOpSync, OUTPUT);
   pinMode(pinIpTrig, INPUT);
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
-  attachInterrupt(pinIpTrig, syncInput, RISING);
   attachInterrupt(ButtonA, buttonAPressed, RISING);
   attachInterrupt(ButtonB, buttonBPressed, RISING);
   // can be CHANGE or LOW or RISING or FALLING or HIGH
+
+#if 0
+  Serial.print(F("\nStarting PWM_Waveform_Fast on "));
+  Serial.println(BOARD_NAME);
+  Serial.println(RP2040_PWM_VERSION);
+#endif
 
   for (uint8_t index = 0; index < NUM_OF_PINS; index++)
   {
@@ -633,16 +587,29 @@ void setup()
 
       uint32_t div = PWM_Instance[index]->get_DIV();
       uint32_t top = PWM_Instance[index]->get_TOP();
-
-//      Serial.print("\t\t");
-//      Serial.println(PWM_Instance[index]->getActualFreq());
-
       PWM_LOGDEBUG5("TOP =", top, ", DIV =", div, ", CPU_freq =", PWM_Instance[index]->get_freq_CPU());
     }
   }
-      Serial.print("PWM Actual frequency[7] = ");
-      Serial.print(PWM_Instance[7]->getActualFreq()/10);
-      Serial.println(" kHz");
+
+ #if 0
+  Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
+  Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
+  Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
+#endif
+
+ // Interval in microsecs
+  if (ITimer0.attachInterruptInterval(sine_table.timer_interval, TimerHandler0))
+  {
+    Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
+  }
+  else
+    Serial.println(F("Can't set ITimer0. Select another freq. or timer"));
+
+  Serial.print("PWM Actual frequency[7] = ");
+  Serial.print(PWM_Instance[7]->getActualFreq()/10);
+  Serial.println(" kHz");
+
+  attachInterrupt(pinIpTrig, syncInput, RISING);
 
   parser.registerCommand("rep", "",  &cmd_report);
   parser.registerCommand("fin", "d", &cmd_fin);
@@ -650,7 +617,7 @@ void setup()
   parser.registerCommand("coa", "d", &cmd_coa);
   parser.registerCommand("abs", "d", &cmd_abs);
   parser.registerCommand("step", "d", &cmd_step);
-  parser.registerCommand("auto", "d", &cmd_automatic);
+  parser.registerCommand("auto", "", &cmd_automatic);
   parser.registerCommand("del",  "d", &cmd_autodelay);
   
   Serial.println("to show summary of current settings:");
@@ -677,14 +644,6 @@ void setup()
   Serial.println("Note medium step for 1 degree is absolute 30");
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
-  // Interval in microsecs
-  if (ITimer0.attachInterruptInterval(sine_table.timer_interval, TimerHandler0))
-  {
-    Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
-  }
-  else
-    Serial.println(F("Can't set ITimer0. Select another freq. or timer"));
-
   anglesUpdate();
   displayUpdate();
 }
@@ -725,6 +684,13 @@ void loop()
   encoder.tick();
 
   int newPos = encoder.getPosition();
+  
+  if(newPos < 0)
+  {
+    encoder.setPosition(0);
+    newPos = 0;
+  }
+
   if (pos != newPos) 
   {
     #if 0
@@ -734,11 +700,11 @@ void loop()
     Serial.println((int)(encoder.getDirection()));
     #endif
     pos = newPos;
-  
+ 
     if(!automatic)
     {
       absolute = pos * autostep;
-      abs2res(absolute, &angle0, &angle1, &angle2);
+      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
       anglesUpdate();
     }
     awaken = true;
@@ -748,7 +714,7 @@ void loop()
   {
   //  Serial.println(F("Button A Pressed"));
     buttonAPress= false;
-    automatic = 1;
+    automatic = true;
     displayUpdate();
     awaken = true;
   }
@@ -757,7 +723,7 @@ void loop()
   {
   //  Serial.println(F("Button B Pressed"));
     buttonBPress= false;
-    automatic = 0;
+    automatic = false;
     encoder.setPosition(absolute/autostep); // update encode value after auto run
     displayUpdate();
     awaken = true;
@@ -773,7 +739,7 @@ void loop()
     {
       del_count=del_value;
       absolute += autostep;   
-      abs2res(absolute, &angle0, &angle1, &angle2); 
+      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[1].angle); 
       anglesUpdate();
     }
   }
