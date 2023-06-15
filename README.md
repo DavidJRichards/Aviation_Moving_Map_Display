@@ -308,6 +308,10 @@ A Reference pulse output is available to trigger the oscilloscope.
  * 11 V 400 Hz resolver signals, two per channel, 5 channels
  * 28 VDC relay inputs ( pin 42 needed to power on unit )
 
+ * Pin 16 when fed with 28 volts sometimes causes high current draw - lamp change motor.
+ * This seems to now be broken as some smoke came out from the rear - ok without pin 16 active.
+ * complete unit can just be powered from my static inverter,  about 8.5 amp DC input when lamp lit
+
 <br>
 
 |Pin #|Alt #|Function  |Note          |
@@ -363,9 +367,9 @@ A Reference pulse output is available to trigger the oscilloscope.
 |44| 44  | b           |Heading-b     |
 |45| 45  | common      |Heading-com   |
 |46||||
-|47||||
-|48| 48  | +12V 400Hz  |Reference+wrt 0V|
-|49| 49  | -12V 400Hz  |Reference-wrt 0V|
+|47| 47  |  0V         |Reference common|
+|48| 48  | +12V 400Hz  |Reference       |
+|49| 49  | -12V 400Hz  |Reference       |
 |50||||
 |51| 51  | a           |Fine-a        |
 |52| 52  | b           |Fine-b        |

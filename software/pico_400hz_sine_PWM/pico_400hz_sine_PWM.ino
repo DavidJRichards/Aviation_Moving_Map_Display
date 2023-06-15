@@ -155,6 +155,7 @@ float PWM_dutyCycle = 50.0f;
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
 #define SYNC_OFFSET_COUNT 4
 #define PULSE_OFFSET_COUNT 2
+#define DIV_CONST 740
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
@@ -169,9 +170,21 @@ struct sine_table_ {
 
 bool buttonAPress = false;
 bool buttonBPress = false;
+bool encoderPress = false;
+
+int stepidx=1;
+int steplist[] = {1,30,900};
+
+int delayidx=1;
+float delaylist[] = {10.0 ,100.0, 1000.0 };
+
+#define TIMER1_INTERVAL_MS        20
+#define DEBOUNCING_INTERVAL_MS    100
+#define LONG_PRESS_INTERVAL_MS    1000
 
 // Init RPI_PICO_Timer, can use any from 0-15 pseudo-hardware timers
 RPI_PICO_Timer ITimer0(0);
+RPI_PICO_Timer ITimer1(1);
 
 //RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 // todo: use something like these ...
@@ -213,14 +226,19 @@ struct transport_ transport = {
 
 char dashLine[] = "=====================================================================";
 
+// button debounce variables
+volatile bool SWPressed     = false;
+volatile bool SWLongPressed = false;
+
 // index into 400Hz sine table for PWM frequency generation
 volatile int step_index = 0; 
 
 // menu variables TODO use transport structure variables
-float autostep =  1;
+float autostep =  30;
 bool  automatic = false;
 int   autodelay = 10;
 float absolute =  0;
+int amplitude=DIV_CONST;
 
 // screensaver
 #define SLEEPTIME 300
@@ -308,7 +326,6 @@ bool TimerHandler0(struct repeating_timer *t)
   PWM_Instance[7]->setPWM_DCPercentage_manual(PWM_Pins[7], dc_percent[7] );
 
 #else // use int level 0 to 1000 TODO, maybe faster
-#define DIV_CONST 1024 
 #define MID_POINT_INT 500
   int_sine_step_value = ( sine_table.levels[step_index] ); 
 
@@ -316,24 +333,24 @@ bool TimerHandler0(struct repeating_timer *t)
 // sine_table is +- 512 ( 10 bits )
 // scale is +- 500 (10 bits )
 // product is 20 bits - needs to be 10 - so divide by 10 bits 
-  dc_levels[0] = MID_POINT_INT +    transport.resolvers[0].amplitude[0]  * int_sine_step_value / DIV_CONST;
+  dc_levels[0] = MID_POINT_INT +    transport.resolvers[0].amplitude[0]  * int_sine_step_value / amplitude;
   PWM_Instance[0]->setPWM_manual_Fast(PWM_Pins[0], dc_levels[0]);
-  dc_levels[1] = MID_POINT_INT +    transport.resolvers[0].amplitude[1]  * int_sine_step_value / DIV_CONST;
+  dc_levels[1] = MID_POINT_INT +    transport.resolvers[0].amplitude[1]  * int_sine_step_value / amplitude;
   PWM_Instance[1]->setPWM_manual_Fast(PWM_Pins[1], dc_levels[1]);
 
-  dc_levels[2] = MID_POINT_INT +    transport.resolvers[1].amplitude[0]  * int_sine_step_value / DIV_CONST;
+  dc_levels[2] = MID_POINT_INT +    transport.resolvers[1].amplitude[0]  * int_sine_step_value / amplitude;
   PWM_Instance[2]->setPWM_manual_Fast(PWM_Pins[2], dc_levels[2]);
-  dc_levels[3] = MID_POINT_INT +    transport.resolvers[1].amplitude[1]  * int_sine_step_value / DIV_CONST;
+  dc_levels[3] = MID_POINT_INT +    transport.resolvers[1].amplitude[1]  * int_sine_step_value / amplitude;
   PWM_Instance[3]->setPWM_manual_Fast(PWM_Pins[3], dc_levels[3]);
 
-  dc_levels[4] = MID_POINT_INT +    transport.resolvers[2].amplitude[0]  * int_sine_step_value / DIV_CONST;
+  dc_levels[4] = MID_POINT_INT +    transport.resolvers[2].amplitude[0]  * int_sine_step_value / amplitude;
   PWM_Instance[4]->setPWM_manual_Fast(PWM_Pins[4], dc_levels[4]);
-  dc_levels[5] = MID_POINT_INT +    transport.resolvers[2].amplitude[1]  * int_sine_step_value / DIV_CONST;
+  dc_levels[5] = MID_POINT_INT +    transport.resolvers[2].amplitude[1]  * int_sine_step_value / amplitude;
   PWM_Instance[5]->setPWM_manual_Fast(PWM_Pins[5], dc_levels[5]);
 
-  dc_levels[6] = MID_POINT_INT +   transport.resolvers[3].amplitude[0] * int_sine_step_value / DIV_CONST; // reference +sinewave output
+  dc_levels[6] = MID_POINT_INT +   transport.resolvers[3].amplitude[0] * int_sine_step_value / amplitude; // reference +sinewave output
   PWM_Instance[6]->setPWM_manual_Fast(PWM_Pins[6], dc_levels[6]);
-  dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / DIV_CONST; // reference -sinewave output
+  dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / amplitude; // reference -sinewave output
   PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
 #endif
@@ -358,6 +375,9 @@ void buttonAPressed() {
 }
 void buttonBPressed() {
   buttonBPress= true;
+}
+void encoderPressed() {
+  encoderPress= true;
 }
 
 // these constants represent the gearing between the resolvers 
@@ -464,8 +484,6 @@ void displayUpdate(void)
 // show common detail information
 #if 1
   Serial.println();
-  Serial.print("Absolute = ");
-  Serial.println(absolute);
 
   Serial.print("Step = ");
   Serial.print(autostep);
@@ -474,11 +492,18 @@ void displayUpdate(void)
   Serial.println(autodelay);
 
   Serial.print("Auto = ");
-  Serial.println(automatic);
+  Serial.print(automatic);
+
+  Serial.print(", Amp = ");
+  Serial.println(amplitude);
+
+  Serial.print("Absolute = ");
+  Serial.println(absolute);
 #endif
   tft.println();
   tft.print("Absolute = ");
   tft.println(absolute);
+  tft.println();
 
   tft.print("Step =     ");
   tft.println(autostep);
@@ -500,6 +525,12 @@ void cmd_abs(MyCommandParser::Argument *args, char *response) {
   absolute = args[0].asDouble;
   abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
   anglesUpdate();
+  displayUpdate();
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
+void cmd_amplitude(MyCommandParser::Argument *args, char *response) {
+  amplitude = args[0].asDouble;
   displayUpdate();
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
@@ -543,6 +574,95 @@ void cmd_coa(MyCommandParser::Argument *args, char *response) {
   displayUpdate();
 }
 
+// button debounce timer -----------------------------------------------------------------------------------------
+
+bool TimerHandler1(struct repeating_timer *t)
+{ 
+  (void) t;
+  
+  static unsigned int debounceCountSWPressed  = 0;
+  static unsigned int debounceCountSWReleased = 0;
+
+#if (LOCAL_DEBUG > 1)
+  static unsigned long SWPressedTime;
+  static unsigned long SWReleasedTime;
+
+  unsigned long currentMillis = millis();
+#endif
+
+  if ( (!digitalRead(ENCODER_SW_PIN)) )
+  {
+    // Start debouncing counting debounceCountSWPressed and clear debounceCountSWReleased
+    debounceCountSWReleased = 0;
+
+    if (++debounceCountSWPressed >= DEBOUNCING_INTERVAL_MS / TIMER1_INTERVAL_MS)
+    {
+      // Call and flag SWPressed
+      if (!SWPressed)
+      {
+#if (LOCAL_DEBUG > 1)   
+        SWPressedTime = currentMillis;
+        
+        Serial.print("SW Press, from millis() = "); Serial.println(SWPressedTime);
+#endif
+
+        SWPressed = true;
+        // Do something for SWPressed here in ISR
+        // But it's better to use outside software timer to do your job instead of inside ISR
+        //Your_Response_To_Press();
+      }
+
+      if (debounceCountSWPressed >= LONG_PRESS_INTERVAL_MS / TIMER1_INTERVAL_MS)
+      {
+        // Call and flag SWLongPressed
+        if (!SWLongPressed)
+        {
+#if (LOCAL_DEBUG > 1)
+          Serial.print("SW Long Pressed, total time ms = "); Serial.print(currentMillis);
+          Serial.print(" - "); Serial.print(SWPressedTime);
+          Serial.print(" = "); Serial.println(currentMillis - SWPressedTime);                                           
+#endif
+
+          SWLongPressed = true;
+          // Do something for SWLongPressed here in ISR
+          // But it's better to use outside software timer to do your job instead of inside ISR
+          //Your_Response_To_Long_Press();
+        }
+      }
+    }
+  }
+  else
+  {
+    // Start debouncing counting debounceCountSWReleased and clear debounceCountSWPressed
+    if ( SWPressed && (++debounceCountSWReleased >= DEBOUNCING_INTERVAL_MS / TIMER1_INTERVAL_MS))
+    {
+#if (LOCAL_DEBUG > 1)      
+      SWReleasedTime = currentMillis;
+
+      // Call and flag SWPressed
+      Serial.print("SW Released, from millis() = "); Serial.println(SWReleasedTime);
+#endif
+
+      SWPressed     = false;
+      SWLongPressed = false;
+
+      // Do something for !SWPressed here in ISR
+      // But it's better to use outside software timer to do your job instead of inside ISR
+      //Your_Response_To_Release();
+
+      // Call and flag SWPressed
+#if (LOCAL_DEBUG > 1)
+      Serial.print("SW Pressed total time ms = ");
+      Serial.println(SWReleasedTime - SWPressedTime);
+#endif
+
+      debounceCountSWPressed = 0;
+    }
+  }
+
+  return true;
+}
+
 // setup -----------------------------------------------------------------------------------------
 
 void setup()
@@ -571,8 +691,11 @@ void setup()
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
+  pinMode(ENCODER_SW_PIN, INPUT_PULLUP);
   attachInterrupt(ButtonA, buttonAPressed, RISING);
   attachInterrupt(ButtonB, buttonBPressed, RISING);
+  attachInterrupt(ENCODER_SW_PIN, encoderPressed, RISING);
+  
   // can be CHANGE or LOW or RISING or FALLING or HIGH
 
 #if 0
@@ -597,7 +720,7 @@ void setup()
     }
   }
 
- #if 0
+#if 0
   Serial.print(F("\nStarting TimerInterruptTest on ")); Serial.println(BOARD_NAME);
   Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
@@ -617,6 +740,16 @@ void setup()
 
   attachInterrupt(pinIpTrig, syncInput, RISING);
 
+  // Interval in microsecs
+  if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS * 1000, TimerHandler1))
+  {
+    Serial.print(F("Starting ITimer1 OK, millis() = ")); Serial.println(millis());
+  }
+  else
+  {
+    Serial.println(F("Can't set ITimer1. Select another freq. or timer"));
+  }
+
   parser.registerCommand("rep", "",  &cmd_report);
   parser.registerCommand("fin", "d", &cmd_fin);
   parser.registerCommand("med", "d", &cmd_med);
@@ -625,6 +758,7 @@ void setup()
   parser.registerCommand("step", "d", &cmd_step);
   parser.registerCommand("auto", "", &cmd_automatic);
   parser.registerCommand("del",  "d", &cmd_autodelay);
+  parser.registerCommand("amp",  "d", &cmd_amplitude);
   
   Serial.println("to show summary of current settings:");
   Serial.println("registered command: rep ");
@@ -721,6 +855,8 @@ void loop()
   //  Serial.println(F("Button A Pressed"));
     buttonAPress= false;
     automatic = true;
+    if(++delayidx > 2) delayidx = 0;
+    autodelay = delaylist[delayidx];
     displayUpdate();
     awaken = true;
   }
@@ -730,10 +866,49 @@ void loop()
   //  Serial.println(F("Button B Pressed"));
     buttonBPress= false;
     automatic = false;
+    if(++stepidx > 2) stepidx = 0;
+    autostep = steplist[stepidx];
     encoder.setPosition(absolute/autostep); // update encode value after auto run
     displayUpdate();
     awaken = true;
   }
+
+#if 0
+  if(SWPressed == true)
+  {
+    if(++stepidx > 2) stepidx = 0;
+    autostep = steplist[stepidx];
+    encoder.setPosition(absolute/autostep); // update encode value after auto run
+    //displayUpdate();
+    old_absolute=!absolute;
+    awaken = true;
+  }
+#endif
+
+#if 1
+  if(SWLongPressed == true)
+  {
+    absolute = 0;
+    abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
+    anglesUpdate();
+    //displayUpdate();
+    old_absolute=!absolute;
+    awaken = true;
+  }
+#endif
+
+#if 0
+  if(encoderPress)
+  {
+    Serial.println(F("Encoder Button Pressed"));
+    encoderPress = false;
+    absolute = 0;
+    abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
+    anglesUpdate();
+//    displayUpdate();
+    awaken = true;
+  }
+#endif
 
   if(automatic)
   {
@@ -745,7 +920,7 @@ void loop()
     {
       del_count=del_value;
       absolute += autostep;   
-      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[1].angle); 
+      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
       anglesUpdate();
     }
   }
