@@ -133,18 +133,20 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |-------|-|
 |fin|Fine angle|
 |med|Medium angle|
-|cou|Coarse angle|
+|coa|Coarse angle|
 |abs|Absolute index|
 |rep|report current settings|
 |step|index step|
 |auto|enable automatic increment|
 |del|delay mS between increments|
+|amp|Output amplitude divider|
 
  * rotation of the encoder adjusts the absolute value by plus or minus step
  * A non-zero value in automatic starts the automatic absolute change cycle
  * Press of button A starts the automatic map movement
  * Press of button B stops the automatic mape movement
- * When changing from auto to manual the encoder value is updated to allow fine control.
+ * Press of Encoder button resets absolute position value
+ * disabled: (When changing from auto to manual the encoder value is updated to allow fine control.)
 
 #### Status display with buttons
 
@@ -210,11 +212,10 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
  * sync pulse input triggers start of positive going +ve ref output, cos 0 outputs
  * as angles increase from 0 sin outputs start to increase in positive direction
  * as angles increade positice cos output decreases
- 
-
 
 
 <br>
+
 #### Absolute transport position encoding
 
 Approximate representation showing supposed overlap of resolver rotations.
