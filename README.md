@@ -107,7 +107,7 @@ Video shows input voltage being raised from 0 to 115 VAC 400Hz
 
 ![improved-opto-detector](./images/improved-opto-detector.png)
 
-#####Revised parts list:
+##### Revised parts list:
 
 |Part|Value |
 |--|--|
@@ -200,7 +200,7 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 |Coarse |com| - |  - | - | C |66 |
 |Ref    | - | 6 | 21 | 4 | R |48?|
 |Ref    | + | 7 |  7 | 4 | L |49?|
-|Ref    |com| - |  - | - | C |32 |
+|Ref    |com| - |  - | - | C |47 |
 
 #### Initial conditions
 
@@ -396,6 +396,7 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 [boards photo](https://cdn.rochesteravionicarchives.co.uk/img/catalog/C1774_%28pcbs_small%29_.jpg?w=1500&fit=max)
 
 <br>
+
 ### Screen module circuit boards
 
 |No|Name|Position|
