@@ -1,28 +1,32 @@
 /****************************************************************************************************************************
-  djrm Jun 4 2023
-  based on RP2040_PWM library demo
-
+  djrm Jun 18 2023
+ 
   test functions to drive Ferranti moving map display
   generate three pairs of resolver 400 Hz sin/cos waveforms
   ralative amplitudes try to match fine, medium, and coarse requirements
   to position map film at arbitary absolute position
-  see https://github.com/DavidJRichards/Aviation_Moving_Map_Display#exercise-software
-  WIP, not yest fully working 
 
-  https://github.com/khoih-prog/RP2040_PWM
-  https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
- 
+  enhanced to drive extra two pairs of resolver outputs for heading and NtoS movement
+  see https://github.com/DavidJRichards/Aviation_Moving_Map_Display#exercise-software
+
+  // TFTeSPI graphic display library
+  https://github.com/Bodmer/TFT_eSPI
+
+  // LCD Menu 2 library
+  https://github.com/Jomelo/LCDMenuLib2
+
   // Rotary Encoder library
   http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx
 
-  // specific info about explorer board
+  // specific info about explorer board used for development
   https://forums.pimoroni.com/t/program-the-pico-explorer-with-arduino-ide/17983
 
-  https://www.mikrocontroller.net/attachment/346746/AND9282-D_AC_Zero_Crossing.pdf
+  // zero crossing detector for 400Hz suply synchronization
   https://www.edn.com/mains-driven-zero-crossing-detector-uses-only-a-few-high-voltage-parts/
-  https://d1.amobbs.com/bbs_upload782111/files_40/ourdev_643643NSY57M.pdf
-  https://www.edn.com/a-circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period/
 
+  // using for base PWM
+  https://github.com/khoih-prog/RP2040_PWM
+ 
   PWM_Waveform_Fast.ino
   For RP2040 boards
   Written by Khoi Hoang
@@ -33,6 +37,10 @@
   The RP2040 PWM block has 8 identical slices. Each slice can drive two PWM output signals, or measure the frequency
   or duty cycle of an input signal. This gives a total of up to 16 controllable PWM outputs. All 30 GPIO pins can be driven
   by the PWM block
+
+  // using timer for 400Hz sinewave generation
+  https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
+
 *****************************************************************************************************************************/
 // These define's must be placed at the beginning before #include "TimerInterrupt_Generic.h"
 // _TIMERINTERRUPT_LOGLEVEL_ from 0 to 4
@@ -102,6 +110,8 @@
 // general purpose utility macro
 #define NUMELE(array) ( sizeof(array) / sizeof(array[0]) )
 
+enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
+
 // *********************************************************************
 // Prototypes
 // *********************************************************************
@@ -128,7 +138,8 @@
 
   // For beginners
   // LCDML_add(id, prev_layer, new_num, lang_char_array, callback_function)
-  LCDML_add         (21 , LCDML_0         , 1  , "Information"      , mFunc_information);       // this menu function can be found on "LCDML_display_menuFunction" tab
+/*
+  LCDML_add         (0  , LCDML_0         , 1  , "Information"      , mFunc_information);       // this menu function can be found on "LCDML_display_menuFunction" tab
   LCDML_add         (1  , LCDML_0         , 2  , "Time info"        , mFunc_timer_info);        // this menu function can be found on "LCDML_display_menuFunction" tab
   LCDML_add         (2  , LCDML_0         , 3  , "Program"          , NULL);                    // NULL = no menu function
   LCDML_add         (3  , LCDML_0_3       , 1  , "Program 1"        , NULL);                    // NULL = no menu function
@@ -144,51 +155,62 @@
   LCDML_add         (13 , LCDML_0_4       , 1  , "Go to Root"       , mFunc_goToRootMenu);      // this menu function can be found on "LCDML_display_menuFunction" tab
   LCDML_add         (14 , LCDML_0_4       , 2  , "Jump to Time info", mFunc_jumpTo_timer_info); // this menu function can be found on "LCDML_display_menuFunction" tab
   LCDML_add         (15 , LCDML_0_4       , 3  , "Back"             , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
-
+*/
 
   // Advanced menu (for profit) part with more settings
   // Example for one function and different parameters
   // It is recommend to use parameters for switching settings like, (small drink, medium drink, big drink) or (200ml, 400ml, 600ml, 800ml) ...
   // the parameter change can also be released with dynParams on the next example
   // LCDMenuLib_addAdvanced(id, prev_layer, new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (16 , LCDML_0         , 5  , NULL,          "Stepsize"      , mFunc_para,             0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (17 , LCDML_0_5       , 1  , NULL,          "Stepsize 1"    , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (18 , LCDML_0_5       , 2  , NULL,          "Stepsize 30"   , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (19 , LCDML_0_5       , 3  , NULL,          "Stepsize 900"  , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (20 , LCDML_0_5       , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
 
-  LCDML_addAdvanced (24 , LCDML_0          ,10  , NULL,          "AutoDelay"      , mFunc_para,             0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (25 , LCDML_0_10       , 1  , NULL,          "AutoDelay 1"    , mFunc_para,       61,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (26 , LCDML_0_10       , 2  , NULL,          "AutoDelay 10"   , mFunc_para,       62,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (27 , LCDML_0_10       , 3  , NULL,          "AutoDelay 100"  , mFunc_para,       63,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (28 , LCDML_0_10       , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
 
-  LCDML_addAdvanced (29 , LCDML_0   ,     6  ,     NULL,         ""             , mDyn_para,        0,                 _LCDML_TYPE_dynParam);                     // NULL = no menu function
-  LCDML_add         (30 , LCDML_0          , 12  , "Toggle auto"          , mFunc_toggleAuto);                    // NULL = no menu function
-  LCDML_add         (31 , LCDML_0          , 13  , "Reset abs"            , mFunc_resetAbs);                    // NULL = no menu function
-  LCDML_add         (32 , LCDML_0          , 14  , "Show settings"      , mFunc_showSettings);       // this menu function can be found on "LCDML_display_menuFunction" tab
+
+  LCDML_addAdvanced ( 0 , LCDML_0   ,       1  ,  NULL,         ""               , mDyn_heading,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 1 , LCDML_0   ,       2  ,  NULL,         ""               , mDyn_ntos,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 2 , LCDML_0    ,      3  ,  NULL,         ""               , mDyn_absolute,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 3 , LCDML_0   ,       4  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 4 , LCDML_0   ,       5  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 5 , LCDML_0   ,       6  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+
+  LCDML_add         ( 6 , LCDML_0        ,  7  , "Show settings"                 , mFunc_showSettings);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_add         ( 7 , LCDML_0        ,  8  , "Toggle auto"                   , mFunc_toggleAuto);                                                       // NULL = no menu function
+
+  LCDML_add         ( 8 , LCDML_0        ,  9  , "Reset abs"                     , mFunc_resetAbs);                                                         // NULL = no menu function
+
+
+  LCDML_addAdvanced ( 9 , LCDML_0         ,10  , NULL,          "Stepsize"       , mFunc_para,        0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (10 , LCDML_0_5       , 1  , NULL,          "Stepsize 1"     , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (11 , LCDML_0_5       , 2  , NULL,          "Stepsize 30"    , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (12 , LCDML_0_5       , 3  , NULL,          "Stepsize 900"   , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (13 , LCDML_0_5       , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+
+  LCDML_addAdvanced (14 , LCDML_0         ,11  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (15 , LCDML_0_10      , 1  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (16 , LCDML_0_10      , 2  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (17 , LCDML_0_10      , 3  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (18 , LCDML_0_10      , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+
 
   // Example for dynamic content
   // 1. set the string to ""
   // 2. use type  _LCDML_TYPE_dynParam   instead of    _LCDML_TYPE_default
   // this function type can not be used in combination with different parameters
   // LCDMenuLib_addAdvanced(id, prev_layer,  new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced  (0 , LCDML_0   ,    11  ,     NULL,         ""             , mDyn_abs,        0,                 _LCDML_TYPE_dynParam);                     // NULL = no menu function
 
   // Example for conditions (for example for a screensaver)
   // 1. define a condition as a function of a boolean type -> return false = not displayed, return true = displayed
   // 2. set the function name as callback (remove the braces '()' it gives bad errors)
   // LCDMenuLib_addAdvanced(id, prev_layer,     new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (22 ,      LCDML_0         , 7  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (19 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // Example function for event handling (only serial output in this example)  
-  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
+//  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // ***TIP*** Try to update _LCDML_DISP_cnt when you add a menu element.
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    32
+  #define _LCDML_DISP_cnt    19
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -197,8 +219,8 @@
 // I/O pin definitions
 // *********************************************************************
 
-#define ENCODER_PIN_IN2    20 //16 //20
-#define ENCODER_PIN_IN1    22 //17 //22 
+#define ENCODER_PIN_IN2    20
+#define ENCODER_PIN_IN1    22
 #define encoder_button_pin 26
 
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
@@ -226,8 +248,9 @@ TFT_eSPI display = TFT_eSPI();
 #define ButtonX       14    // PWM 7A
 #define ButtonY       15    // PWM 7B
 
-
-uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7  };
+//                          0A 1A 2A 3A 0B 1B 2B  3B 4A 4B 5A  5B
+uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7, 8, 9, 10, 11  };
+//uint32_t PWM_Pins[]     = { 8, 9, 10, 11, 0, 2, 4, 6, 1, 3, 21, 7,  };
 #define NUM_OF_PINS NUMELE(PWM_Pins)
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
@@ -237,13 +260,13 @@ RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 #define pin4          2     // PWM channel 1A gp2
 #define pin5          3     // PWM channel 1B int
 #define pin6          4     // PWM channel 2A sda
-#define pin7          5     // PWM channel 2B scl
+#define pin7          5/21  // PWM channel 2B scl
 #define pin9          6     // PWM channel 3A r
 #define pin10         7     // PWM channel 3B g
 #define pin11         8     // PWM channel 4A b (mot1-)
-#define pin12         9     // PWM channel 4B (mot1+)
-#define pin14         10    // PWM channel 5A (mot2-)
-#define pin15         11    // PWM channel 5B (mot2+)
+#define pin12         9     // PWM channel 4B   (mot1+)
+#define pin14         10    // PWM channel 5A   (mot2-)
+#define pin15         11    // PWM channel 5B   (mot2+)
 #define pin16         12    // PWM channel 6A (button A)
 #define pin17         13    // PWM channel 6B (button B)
 #define pin34         28    // PWM channel 6A adc2
@@ -322,19 +345,23 @@ struct resolver_ {
  };
 
 struct transport_ {
-  struct resolver_ resolvers[4];
+  struct resolver_ resolvers[6];
   long absolute;                // moving map absolute position
   int  autostep;                // step size for automatic (or encoder) movement
   bool  automatic;               // enable automatic map movement (E/W)
   int  autodelay;               // time between automatic steps
 };        
 
+
+
 struct transport_ transport = {
 // name,      instance, pin, duty1, instance, pin, duty2, angle, amp1, amp2, duty1, duty2  
-  "Fine",     "sin",  NULL,     0,   0.0,   "cos",  NULL,     2,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, duty, instance, pin, duty, angle, scale1, scale2
-  "Medium",   "sin",  NULL,     4,   0.0,   "cos",  NULL,     6,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "Coarse",   "sin",  NULL,     1,   0.0,   "cos",  NULL,     3,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
-  "Reference","ref+", NULL,    21,   0.0,   "ref-", NULL,     7,   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Fine",     "sin",  NULL,     PWM_Pins[ 0],   0.0,   "cos",  NULL,     PWM_Pins[ 1],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Medium",   "sin",  NULL,     PWM_Pins[ 2],   0.0,   "cos",  NULL,     PWM_Pins[ 3],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Coarse",   "sin",  NULL,     PWM_Pins[ 4],   0.0,   "cos",  NULL,     PWM_Pins[ 5],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Reference","ref+", NULL,     PWM_Pins[ 6],   0.0,   "ref-", NULL,     PWM_Pins[ 7],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "Heading",  "sin" , NULL,     PWM_Pins[ 8],   0.0,   "cos",  NULL,     PWM_Pins[ 9],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
+  "NtoS",     "sin" , NULL,     PWM_Pins[10],   0.0,   "cos",  NULL,     PWM_Pins[11],   0.0,   0.0,   0,0,   0.0,    0.0,  // name, instance, pin, level, instance, pin, level, angle, scale1, scale2
   0L,                                                                          // absolute
   10,                                                                          // autostep
   false,                                                                       // automatic
@@ -351,8 +378,24 @@ volatile int step_index = 0;
 float autostep =  30;
 bool  automatic = false;
 int   autodelay = 10;
-float absolute =  0;
+float absolute =  0.0;
+float heading = 0.0;
+float ntos = 0.0;
 int amplitude=DIV_CONST;
+
+
+#if 0
+struct pos_details_ {
+  float *position_angle;
+  int   transport_number;
+  }pos_details[] ={
+    &absolute, ABSOLUTE,
+    &heading, HEADING,
+    &ntos,  NtoS,
+};
+#endif
+
+
 
 void build_sintable(void)
 {
@@ -393,7 +436,7 @@ bool TimerHandler0(struct repeating_timer *t)
 { 
   (void) t;
   int16_t int_sine_step_value;
-  uint16_t dc_levels[8];
+  uint16_t dc_levels[NUM_OF_PINS];
 
   if(step_index >= sine_table.num_elements)
   {
@@ -427,6 +470,16 @@ bool TimerHandler0(struct repeating_timer *t)
   dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / amplitude; // reference -sinewave output
   PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
+  dc_levels[8] = MID_POINT_INT +   transport.resolvers[4].amplitude[0] * int_sine_step_value / amplitude;
+  PWM_Instance[8]->setPWM_manual_Fast(PWM_Pins[8], dc_levels[8]);
+  dc_levels[9] = MID_POINT_INT +   transport.resolvers[4].amplitude[1] * int_sine_step_value / amplitude;
+  PWM_Instance[9]->setPWM_manual_Fast(PWM_Pins[9], dc_levels[9]);
+
+  dc_levels[10] = MID_POINT_INT +   transport.resolvers[5].amplitude[0] * int_sine_step_value / amplitude;
+  PWM_Instance[10]->setPWM_manual_Fast(PWM_Pins[10], dc_levels[10]);
+  dc_levels[11] = MID_POINT_INT +   transport.resolvers[5].amplitude[1] * int_sine_step_value / amplitude;
+  PWM_Instance[11]->setPWM_manual_Fast(PWM_Pins[11], dc_levels[11]);
+
   digitalWrite(pinOpSync,step_index == PULSE_OFFSET_COUNT); // sync pulse output
   step_index++;
   return true;
@@ -455,14 +508,14 @@ unsigned long res2abs(int fine, int medium, int coarse)
 }
 
 // convert required absolute film position to resolver angles
-void abs2res(long absolute)
+void abs2res(long bump)
 {
   float target;
-
+  absolute += bump;
   if(absolute < 0) absolute = 0;
   transport.resolvers[2].angle = (absolute / ratio2) - offset_coarse;
-  transport.resolvers[1].angle = (absolute / ratio1) % 360;
-  transport.resolvers[0].angle  =   absolute           % 360;
+  transport.resolvers[1].angle = (int(absolute) / ratio1) % 360;
+  transport.resolvers[0].angle  =   int(absolute)           % 360;
 
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
@@ -479,6 +532,27 @@ void abs2res(long absolute)
  // reference
   transport.resolvers[3].amplitude[0] = 500.0;
   transport.resolvers[3].amplitude[1] = -500.0;
+}
+void heading2res(long bump)
+{
+  float target;
+  heading = fmod(heading+bump,360);
+
+  transport.resolvers[4].angle  =   heading;
+  target = fmod(transport.resolvers[4].angle, 360) * M_PI/180.0;
+  transport.resolvers[4].amplitude[0] = sin(target) * 500;
+  transport.resolvers[4].amplitude[1] = cos(target) * 500;
+}
+
+void ntos2res(long bump)
+{
+  float target;
+  ntos = fmod(ntos+bump,360);
+
+  transport.resolvers[5].angle  =   ntos;
+  target = fmod(transport.resolvers[5].angle, 360) * M_PI/180.0;
+  transport.resolvers[5].amplitude[0] = sin(target) * 500;
+  transport.resolvers[5].amplitude[1] = cos(target) * 500;
 }
 
 // screensaver
@@ -498,25 +572,38 @@ void displayUpdate(void)
   Serial.println("=====================");
 
 // show details for individual PWM channel settings
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 6; i++)
   {
   #if 1
     Serial.println();
-    Serial.print(transport.resolvers[i].name);
-    Serial.print(" Angle = ");
+
+
+    Serial.print("Channel # ");
+    Serial.print(i);
+    Serial.print(", ");
+    Serial.println(transport.resolvers[i].name);
+
+    Serial.print("Angle = ");
     Serial.println(transport.resolvers[i].angle);
 
-    Serial.print("Scales ");
-    Serial.print(transport.resolvers[i].level[0]);
+    Serial.print("GPIO#s = ");
+    Serial.print(transport.resolvers[i].PWM[0].PWM_pin);
     Serial.print(", ");
-    Serial.println(transport.resolvers[i].level[1]);
+    Serial.println(transport.resolvers[i].PWM[1].PWM_pin);
+
+    Serial.print("Scales ");
+    Serial.print(transport.resolvers[i].amplitude[0]);
+    Serial.print(", ");
+    Serial.println(transport.resolvers[i].amplitude[1]);
+
   #endif
-    display.setCursor(0, 0 + i * 50);
+    display.setCursor(0, 0 + i * 20);
     display.print(transport.resolvers[i].name);
     display.print(" = ");
     display.print(transport.resolvers[i].angle);
     display.println("\xF7"); // degree symbol
 
+#if 0
     display.print(transport.resolvers[i].PWM[0].name);
     display.print("=");
     display.print(transport.resolvers[i].level[0],1);
@@ -525,6 +612,7 @@ void displayUpdate(void)
     display.print("=");
     display.print(transport.resolvers[i].level[1],1);
     display.println("%");
+#endif    
   }
 
   absolute = res2abs(transport.resolvers[0].angle, transport.resolvers[1].angle, transport.resolvers[2].angle);
@@ -568,8 +656,7 @@ void displayUpdate(void)
 void setup()
 {
   display.init();           // Init ST7789 240x240
-//  display.setRotation(2);
-//  display.setSPISpeed(40000000);
+  display.setRotation(0);
   display.fillScreen(TFT_BLACK);
   display.setTextColor(TFT_GREEN);
   display.setTextSize(3);
@@ -636,31 +723,13 @@ void setup()
 
   attachInterrupt(pinIpTrig, syncInput, RISING);
 
-  Serial.println("to show summary of current settings:");
-  Serial.println("registered command: rep ");
-  Serial.println();
-  Serial.println("to set fine, medium, or coarse resolver angles in degrees:");
-  Serial.println("registered command: fin <double> ");
-  Serial.println("registered command: med <double> ");
-  Serial.println("registered command: coa <double> ");
-  Serial.println();
-  Serial.println("to set absolute film transport index value:");
-  Serial.println("registered command: abs <double> ");
-  Serial.println("to set step value (+ve or -ve) used for automatic increment:");
-  Serial.println("registered command: step <double> ");
-  Serial.println("Note , Button A to enable automatic increment");
-  Serial.println("Note , Button B to disable automatic increment");
-  Serial.println();
-  Serial.println("to enable (1) or disable (0) automatic increment:");
-  Serial.println("registered command: auto <double> ");
-  Serial.println("delay between automatic updates mS:");
-  Serial.println("registered command: del <double> ");
-  Serial.println();
   Serial.println("Note fine step for 1 degree is absolute 1");
   Serial.println("Note medium step for 1 degree is absolute 30");
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
-  abs2res(absolute);
+  abs2res(0);
+  heading2res(0);
+  ntos2res(0);
   displayUpdate();
 
     /* INIT LCDML */
@@ -705,12 +774,12 @@ void loop()
   static int old_absolute=0;
 
   static int pos = 0;
-  encoder.tick();
-  // this function must called here, do not delete it
-  LCDML.loop();
+
+  encoder.tick(); // used by menu functions
+  LCDML.loop();   // lcd and serial user interface
 
 
-  if(automatic)
+  if(automatic)   // advance absolute film position
   {
     static int del_count=0;
     int del_value;
@@ -719,12 +788,14 @@ void loop()
     if(del_value - del_count > autodelay)
     {
       del_count=del_value;
-      absolute += autostep;   
-      abs2res(absolute);
+      abs2res(autostep);
+      heading2res(autostep);
+      ntos2res(autostep);
+
     }
   }
 
-#if 0
+/*
   // Use at low freq to check
   printPWMInfo(PWM_Instance[0]);
   printPWMInfo(PWM_Instance[1]);
@@ -735,7 +806,7 @@ void loop()
   printPWMInfo(PWM_Instance[6]);
   printPWMInfo(PWM_Instance[7]);
   delay(500);
-#endif
+*/
 
 }
 // end

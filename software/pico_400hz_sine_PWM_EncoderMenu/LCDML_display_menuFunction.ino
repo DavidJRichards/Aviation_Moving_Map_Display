@@ -133,8 +133,6 @@ void mFunc_showSettings(uint8_t param)
     display.setCursor(0, _LCDML_FONT_H * 3); // line 3
     display.println(F("back button")); 
 
-//    displayUpdate();
-
     LCDML.FUNC_setLoopInterval(100);  // starts a trigger event for the loop function every 100 milliseconds
 
     LCDML.TIMER_msReset(g_timer_1);
