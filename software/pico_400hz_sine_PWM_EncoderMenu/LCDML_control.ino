@@ -24,6 +24,7 @@
 // (5) Control with an IRMP remote [third party lib] (Download: https://github.com/ukw100/IRMP )
 // (6) Control with a joystick
 // (7) Control over I2C PCF8574
+// (8) Control with RotaryEncoder library (Download: http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx)
 // *********************************************************************
 
 #define _LCDML_CONTROL_cfg      8
@@ -286,10 +287,6 @@ void lcdml_menu_control(void)
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
 extern RotaryEncoder encoder;
 
-//  #define encoder_A_pin       16    // physical pin has to be 2 or 3 to use interrupts (on mega e.g. 20 or 21), use internal pullups
-//  #define encoder_B_pin       17    // physical pin has to be 2 or 3 to use interrupts (on mega e.g. 20 or 21), use internal pullups
-  #define encoder_button_pin  26 //18    // physical pin , use internal pullup
-
   #define g_LCDML_CONTROL_button_long_press    800   // ms
   #define g_LCDML_CONTROL_button_short_press   120   // ms
 
@@ -310,9 +307,7 @@ void lcdml_menu_control(void)
     // runs only once
 
     // init pins, enable pullups
-//    pinMode(encoder_A_pin      , INPUT_PULLUP);
-//    pinMode(encoder_B_pin      , INPUT_PULLUP);
-    pinMode(encoder_button_pin  , INPUT_PULLUP);
+    pinMode(encoder_button_pin  , INPUT_PULLUP); // input pullup needed although encoder module has own pullup resistor
   }
 
   // check if encoder is rotated on direction A

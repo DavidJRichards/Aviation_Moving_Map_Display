@@ -11,8 +11,7 @@
 
   https://github.com/khoih-prog/RP2040_PWM
   https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
-  https://github.com/Uberi/Arduino-CommandParser
-
+ 
   // Rotary Encoder library
   http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx
 
@@ -35,32 +34,24 @@
   or duty cycle of an input signal. This gives a total of up to 16 controllable PWM outputs. All 30 GPIO pins can be driven
   by the PWM block
 *****************************************************************************************************************************/
-// *********************************************************************
-// special settings
-// *********************************************************************
-// enable this line when you are not usigng a standard arduino
-// for example when your chip is an ESP or a STM or SAM or something else
+// These define's must be placed at the beginning before #include "TimerInterrupt_Generic.h"
+// _TIMERINTERRUPT_LOGLEVEL_ from 0 to 4
+// Don't define _TIMERINTERRUPT_LOGLEVEL_ > 0. Only for special ISR debugging only. Can hang the system.
+#define TIMER_INTERRUPT_DEBUG         2
+#define _TIMERINTERRUPT_LOGLEVEL_     0 //4
+#define _PWM_LOGLEVEL_                2 //2
+#include "RPi_Pico_TimerInterrupt.h" // pwm duty cycle change timer 
+#include "RP2040_PWM.h"      // to define PWM channels
+#include <math.h>            // use sin and cos functions in main loop only
 
 #define _LCDML_cfg_use_ram 
-
-// include libs
 #include <LCDMenuLib2.h>  
-
-#include <SPI.h>
-
-#include "TFT_eSPI.h"
-
 #include <RotaryEncoder.h>
 
-#define ENCODER_PIN_IN2   20 //16 //20
-#define ENCODER_PIN_IN1   22 //17 //22 
-
-// Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
-RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
-// *********************************************************************
-// Adafruit TFT_ST7735
-// *********************************************************************
-// https://learn.adafruit.com/1-8-tft-display/graphics-library
+#include <SPI.h>             // used by LCD display
+//#define DISABLE_ALL_LIBRARY_WARNINGS
+#define DISABLE_TOUCH_LIBRARY_WARNING
+#include <TFT_eSPI.h>
 
   #define _LCDML_TEXT_COLOR       TFT_WHITE
   #define _LCDML_BACKGROUND_COLOR TFT_BLACK
@@ -69,7 +60,7 @@ RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode
   #define _LCDML_FONT_W      (6*_LCDML_FONT_SIZE)             // font width 
   #define _LCDML_FONT_H      (8*_LCDML_FONT_SIZE)             // font heigt 
   
-  // settings for u8g lib and lcd
+  // settings for  lcd
   #define _LCDML_lcd_w       240            // lcd width
   #define _LCDML_lcd_h       240             // lcd height
  
@@ -83,15 +74,33 @@ RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode
   #define _LCDML_cols        20                   // max cols
   #define _LCDML_rows        _LCDML_rows_max  // max rows 
 
-
   // scrollbar width
   #define _LCDML_scrollbar_w 6  // scrollbar width  
-
 
   // old defines with new content
   #define _LCDML_DISP_cols      _LCDML_cols
   #define _LCDML_DISP_rows      _LCDML_rows 
 
+#if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
+      defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED)
+
+  #if(_PWM_LOGLEVEL_>3)
+    #warning USING_MBED_RP2040_PWM
+  #endif
+
+#elif ( defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
+        defined(ARDUINO_GENERIC_RP2040) ) && !defined(ARDUINO_ARCH_MBED)
+
+  #if(_PWM_LOGLEVEL_>3)
+    #warning USING_RP2040_PWM
+  #endif
+
+#else
+  #error This code is intended to run on the RP2040 mbed_nano, mbed_rp2040 or arduino-pico platform! Please check your Tools->Board setting.
+#endif
+
+// general purpose utility macro
+#define NUMELE(array) ( sizeof(array) / sizeof(array[0]) )
 
 // *********************************************************************
 // Prototypes
@@ -184,62 +193,26 @@ RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
 
+// *********************************************************************
+// I/O pin definitions
+// *********************************************************************
 
-
-
-// These define's must be placed at the beginning before #include "TimerInterrupt_Generic.h"
-// _TIMERINTERRUPT_LOGLEVEL_ from 0 to 4
-// Don't define _TIMERINTERRUPT_LOGLEVEL_ > 0. Only for special ISR debugging only. Can hang the system.
-#define TIMER_INTERRUPT_DEBUG         2
-#define _TIMERINTERRUPT_LOGLEVEL_     0 //4
-#define _PWM_LOGLEVEL_                2 //2
-
-#include "RPi_Pico_TimerInterrupt.h" // pwm duty cycle change timer 
-#include <math.h>            // use sin and cos functions in main loop only
-#include <SPI.h>             // used by LCD display
-#include "TFT_eSPI.h"
-//#include <CommandParser.h>   // serial commands
-#include "RP2040_PWM.h"      // to define PWM channels
-#include <RotaryEncoder.h>
-
-#define ENCODER_PIN_IN2   20
-#define ENCODER_PIN_IN1   22 
-#define ENCODER_SW_PIN    26
-
-// Setup a RotaryEncoder with 4 steps per latch for the 2 signal input pins:
-// RotaryEncoder encoder(PIN_IN1, PIN_IN2, RotaryEncoder::LatchMode::FOUR3);
+#define ENCODER_PIN_IN2    20 //16 //20
+#define ENCODER_PIN_IN1    22 //17 //22 
+#define encoder_button_pin 26
 
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
-//RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
+RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
 
-
+/* these are defined in User_Setup.h
 #define TFT_CS        17
 #define TFT_RST       -1 // Or set to -1 and connect to Arduino RESET pin
 #define TFT_DC        16
 #define TFT_MOSI      19
 #define TFT_SCLK      18
-
-//typedef CommandParser<> MyCommandParser;
-//MyCommandParser parser;
+*/
 
 TFT_eSPI display = TFT_eSPI();
-
-#if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
-      defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED)
-
-#if(_PWM_LOGLEVEL_>3)
-  #warning USING_MBED_RP2040_PWM
-#endif
-
-#elif ( defined(ARDUINO_ARCH_RP2040) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
-        defined(ARDUINO_GENERIC_RP2040) ) && !defined(ARDUINO_ARCH_MBED)
-
-#if(_PWM_LOGLEVEL_>3)
-  #warning USING_RP2040_PWM
-#endif
-#else
-#error This code is intended to run on the RP2040 mbed_nano, mbed_rp2040 or arduino-pico platform! Please check your Tools->Board setting.
-#endif
 
 #define LED_ON        LOW
 #define LED_OFF       HIGH
@@ -253,11 +226,12 @@ TFT_eSPI display = TFT_eSPI();
 #define ButtonX       14    // PWM 7A
 #define ButtonY       15    // PWM 7B
 
+
 uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7  };
-#define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
+#define NUM_OF_PINS NUMELE(PWM_Pins)
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
-/*
+/*        PWM channel reference
 #define pin1          0     // PWM channel 0A tx
 #define pin2          1     // PWM channel 0B rx
 #define pin4          2     // PWM channel 1A gp2
@@ -279,8 +253,10 @@ RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
 uint16_t PWM_data_idle_top = 1330; // to give 100 kHz PWM with 133MHz clock
 uint8_t PWM_data_idle_div = 1;
+
 // You can select any value
 uint16_t PWM_data_idle = 124;
+
 // dummy values for channel creation
 float PWM_frequency = 1000;
 float PWM_dutyCycle = 50.0f;
@@ -310,16 +286,10 @@ struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
   int sinewave_frequency=SINEWAVE_FREQUENCY_HZ;
   int sync_offset=SYNC_OFFSET_COUNT;
-  //uint16_t elements[NUM_SINE_ELEMENTS]; // not needed in wave generating code, values for display / reference only
-  float factors[NUM_SINE_ELEMENTS];
   int16_t levels[NUM_SINE_ELEMENTS];
   uint16_t timer_interval;              // calculated in build sinetable function
   float stepsize;                       // calculated in build sinetable function
 } sine_table;
-
-bool buttonAPress = false;
-bool buttonBPress = false;
-bool encoderPress = false;
 
 int stepidx=1;
 int steplist[] = {1,30,900};
@@ -333,7 +303,6 @@ float delaylist[] = {10.0 ,100.0, 1000.0 };
 
 // Init RPI_PICO_Timer, can use any from 0-15 pseudo-hardware timers
 RPI_PICO_Timer ITimer0(0);
-RPI_PICO_Timer ITimer1(1);
 
 //RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 // todo: use something like these ...
@@ -375,10 +344,6 @@ struct transport_ transport = {
 
 char dashLine[] = "=====================================================================";
 
-// button debounce variables
-volatile bool SWPressed     = false;
-volatile bool SWLongPressed = false;
-
 // index into 400Hz sine table for PWM frequency generation
 volatile int step_index = 0; 
 
@@ -389,12 +354,6 @@ int   autodelay = 10;
 float absolute =  0;
 int amplitude=DIV_CONST;
 
-// screensaver
-#define SLEEPTIME 300
-bool awaken =     false;
-bool asleep =     false;
-int sleeptimer =  SLEEPTIME;
-
 void build_sintable(void)
 {
   int n;
@@ -403,7 +362,6 @@ void build_sintable(void)
 
   for(n=0; n<sine_table.num_elements; n++)
   {
-    sine_table.factors[n] =   (sin(M_PI*(n*sine_table.stepsize)/180.0) * 128) / 256.0;  // table entries -1.0 to + 1.0
     sine_table.levels[n] = int(sin(M_PI*(n*sine_table.stepsize)/180.0) * 512);          // table entries -512 to +512
   }
 
@@ -434,47 +392,14 @@ void build_sintable(void)
 bool TimerHandler0(struct repeating_timer *t)
 { 
   (void) t;
-  float float_sine_step_value;
   int16_t int_sine_step_value;
   uint16_t dc_levels[8];
-  float dc_percent[8];
 
   if(step_index >= sine_table.num_elements)
   {
     step_index = 0;
   }
 
-#if 0 // use float percentage 0.0 to 100.0
-  #define MID_POINT_FLOAT 50.0
-
-// center resultant waveform around 50% PWM full scale is 100.0 * ( sine256[step256%256] / 256.0f )
-  float_sine_step_value = ( sine_table.factors[step_index] ); 
-
-  // fine resolver output
-  dc_percent[0] = MID_POINT_FLOAT +  transport.resolvers[0].level[0] * float_sine_step_value;
-  PWM_Instance[0]->setPWM_DCPercentage_manual(PWM_Pins[0], dc_percent[0]);
-  dc_percent[1] = MID_POINT_FLOAT +  transport.resolvers[0].level[1] * float_sine_step_value;
-  PWM_Instance[1]->setPWM_DCPercentage_manual(PWM_Pins[1], dc_percent[1]);
-
-  // medium resolver output
-  dc_percent[2] = MID_POINT_FLOAT + transport.resolvers[1].level[0] * float_sine_step_value;
-  PWM_Instance[2]->setPWM_DCPercentage_manual(PWM_Pins[2], dc_percent[2]);
-  dc_percent[3] = MID_POINT_FLOAT + transport.resolvers[1].level[1] * float_sine_step_value;  
-  PWM_Instance[3]->setPWM_DCPercentage_manual(PWM_Pins[3], dc_percent[3]);
-
-  // coarse resolver output
-  dc_percent[4] = MID_POINT_FLOAT + transport.resolvers[2].level[0] * float_sine_step_value;
-  PWM_Instance[4]->setPWM_DCPercentage_manual(PWM_Pins[4], dc_percent[4]);
-  dc_percent[5] = MID_POINT_FLOAT + transport.resolvers[2].level[1] * float_sine_step_value;  
-  PWM_Instance[5]->setPWM_DCPercentage_manual(PWM_Pins[5], dc_percent[5]);
- 
-  // reference channel
-  dc_percent[6] = MID_POINT_FLOAT + transport.resolvers[3].level[0] * float_sine_step_value; // reference sinewave output
-  PWM_Instance[6]->setPWM_DCPercentage_manual(PWM_Pins[6], dc_percent[6] );
-  dc_percent[7] = MID_POINT_FLOAT + transport.resolvers[3].level[1] * float_sine_step_value; // reference sinewave output
-  PWM_Instance[7]->setPWM_DCPercentage_manual(PWM_Pins[7], dc_percent[7] );
-
-#else // use int level 0 to 1000 TODO, maybe faster
 #define MID_POINT_INT 500
   int_sine_step_value = ( sine_table.levels[step_index] ); 
 
@@ -502,8 +427,6 @@ bool TimerHandler0(struct repeating_timer *t)
   dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / amplitude; // reference -sinewave output
   PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
-#endif
-
   digitalWrite(pinOpSync,step_index == PULSE_OFFSET_COUNT); // sync pulse output
   step_index++;
   return true;
@@ -514,19 +437,6 @@ void syncInput(void) {
     ITimer0.stopTimer();
     step_index=sine_table.sync_offset;
     ITimer0.restartTimer();
-}
-
-// ISR for button presses
-// n.b. no debounce
-
-void buttonAPressed() {
-  buttonAPress= true;
-}
-void buttonBPressed() {
-  buttonBPress= true;
-}
-void encoderPressed() {
-  encoderPress= true;
 }
 
 // these constants represent the gearing between the resolvers 
@@ -545,41 +455,30 @@ unsigned long res2abs(int fine, int medium, int coarse)
 }
 
 // convert required absolute film position to resolver angles
-void abs2res(long absolute, float *fine, float *medium, float *coarse)
-{
-  if(absolute < 0) absolute = 0;
-  *coarse = (absolute / ratio2) - offset_coarse;
-  *medium = (absolute / ratio1) % 360;
-  *fine  =   absolute           % 360;
-}        
-
-// transfer required resolver angles to PWM scale multipliers
-void anglesUpdate(void)
+void abs2res(long absolute)
 {
   float target;
 
+  if(absolute < 0) absolute = 0;
+  transport.resolvers[2].angle = (absolute / ratio2) - offset_coarse;
+  transport.resolvers[1].angle = (absolute / ratio1) % 360;
+  transport.resolvers[0].angle  =   absolute           % 360;
+
+// fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
   transport.resolvers[0].amplitude[0] = sin(target) * 500;
   transport.resolvers[0].amplitude[1] = cos(target) * 500;
-  transport.resolvers[0].level[0] = sin(target) * 50.0;
-  transport.resolvers[0].level[1] = cos(target) * 50.0;
-
+// medium
   target = fmod(transport.resolvers[1].angle, 360) * M_PI/180.0;
   transport.resolvers[1].amplitude[0] = sin(target) * 500;
   transport.resolvers[1].amplitude[1] = cos(target) * 500;
-  transport.resolvers[1].level[0] = sin(target) * 50.0;
-  transport.resolvers[1].level[1] = cos(target) * 50.0;
-
+// coarse
   target = fmod(transport.resolvers[2].angle, 360) * M_PI/180.0;
   transport.resolvers[2].amplitude[0] = sin(target) * 500;
   transport.resolvers[2].amplitude[1] = cos(target) * 500;
-  transport.resolvers[2].level[0] = sin(target) * 50.0;
-  transport.resolvers[2].level[1] = cos(target) * 50.0;
- 
+ // reference
   transport.resolvers[3].amplitude[0] = 500.0;
   transport.resolvers[3].amplitude[1] = -500.0;
-  transport.resolvers[3].level[0] = +50.0;
-  transport.resolvers[3].level[1] = -50.0;
 }
 
 // screensaver
@@ -664,155 +563,6 @@ void displayUpdate(void)
   display.println(automatic);
 }
 
-#if 0
-// serial command handler functions
-void cmd_report(MyCommandParser::Argument *args, char *response) {
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_abs(MyCommandParser::Argument *args, char *response) {
-  absolute = args[0].asDouble;
-  abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-  anglesUpdate();
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_amplitude(MyCommandParser::Argument *args, char *response) {
-  amplitude = args[0].asDouble;
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_step(MyCommandParser::Argument *args, char *response) {
-  autostep = args[0].asDouble;
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_automatic(MyCommandParser::Argument *args, char *response) {
-  automatic = ! automatic;
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_autodelay(MyCommandParser::Argument *args, char *response) {
-  autodelay = args[0].asDouble;
-  displayUpdate();
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-}
-
-void cmd_fin(MyCommandParser::Argument *args, char *response) {
-  transport.resolvers[0].angle = args[0].asDouble;
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  anglesUpdate();
-  displayUpdate();
-}
-
-void cmd_med(MyCommandParser::Argument *args, char *response) {
-  transport.resolvers[1].angle = args[0].asDouble;
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  anglesUpdate();
-  displayUpdate();
-}
-
-void cmd_coa(MyCommandParser::Argument *args, char *response) {
-  transport.resolvers[2].angle = args[0].asDouble;
-  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
-  anglesUpdate();
-  displayUpdate();
-}
-#endif
-// button debounce timer -----------------------------------------------------------------------------------------
-
-bool TimerHandler1(struct repeating_timer *t)
-{ 
-  (void) t;
-  
-  static unsigned int debounceCountSWPressed  = 0;
-  static unsigned int debounceCountSWReleased = 0;
-
-#if (LOCAL_DEBUG > 1)
-  static unsigned long SWPressedTime;
-  static unsigned long SWReleasedTime;
-
-  unsigned long currentMillis = millis();
-#endif
-
-  if ( (!digitalRead(ENCODER_SW_PIN)) )
-  {
-    // Start debouncing counting debounceCountSWPressed and clear debounceCountSWReleased
-    debounceCountSWReleased = 0;
-
-    if (++debounceCountSWPressed >= DEBOUNCING_INTERVAL_MS / TIMER1_INTERVAL_MS)
-    {
-      // Call and flag SWPressed
-      if (!SWPressed)
-      {
-#if (LOCAL_DEBUG > 1)   
-        SWPressedTime = currentMillis;
-        
-        Serial.print("SW Press, from millis() = "); Serial.println(SWPressedTime);
-#endif
-
-        SWPressed = true;
-        // Do something for SWPressed here in ISR
-        // But it's better to use outside software timer to do your job instead of inside ISR
-        //Your_Response_To_Press();
-      }
-
-      if (debounceCountSWPressed >= LONG_PRESS_INTERVAL_MS / TIMER1_INTERVAL_MS)
-      {
-        // Call and flag SWLongPressed
-        if (!SWLongPressed)
-        {
-#if (LOCAL_DEBUG > 1)
-          Serial.print("SW Long Pressed, total time ms = "); Serial.print(currentMillis);
-          Serial.print(" - "); Serial.print(SWPressedTime);
-          Serial.print(" = "); Serial.println(currentMillis - SWPressedTime);                                           
-#endif
-
-          SWLongPressed = true;
-          // Do something for SWLongPressed here in ISR
-          // But it's better to use outside software timer to do your job instead of inside ISR
-          //Your_Response_To_Long_Press();
-        }
-      }
-    }
-  }
-  else
-  {
-    // Start debouncing counting debounceCountSWReleased and clear debounceCountSWPressed
-    if ( SWPressed && (++debounceCountSWReleased >= DEBOUNCING_INTERVAL_MS / TIMER1_INTERVAL_MS))
-    {
-#if (LOCAL_DEBUG > 1)      
-      SWReleasedTime = currentMillis;
-
-      // Call and flag SWPressed
-      Serial.print("SW Released, from millis() = "); Serial.println(SWReleasedTime);
-#endif
-
-      SWPressed     = false;
-      SWLongPressed = false;
-
-      // Do something for !SWPressed here in ISR
-      // But it's better to use outside software timer to do your job instead of inside ISR
-      //Your_Response_To_Release();
-
-      // Call and flag SWPressed
-#if (LOCAL_DEBUG > 1)
-      Serial.print("SW Pressed total time ms = ");
-      Serial.println(SWReleasedTime - SWPressedTime);
-#endif
-
-      debounceCountSWPressed = 0;
-    }
-  }
-
-  return true;
-}
-
 // setup -----------------------------------------------------------------------------------------
 
 void setup()
@@ -838,15 +588,11 @@ void setup()
   pinMode(pinLED, OUTPUT);
   pinMode(pinOpSync, OUTPUT);
   pinMode(pinIpTrig, INPUT);
+#if 0
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
-  pinMode(ENCODER_SW_PIN, INPUT_PULLUP);
-  attachInterrupt(ButtonA, buttonAPressed, RISING);
-  attachInterrupt(ButtonB, buttonBPressed, RISING);
-  attachInterrupt(ENCODER_SW_PIN, encoderPressed, RISING);
-  
-  // can be CHANGE or LOW or RISING or FALLING or HIGH
+#endif
 
 #if 0
   Serial.print(F("\nStarting PWM_Waveform_Fast on "));
@@ -890,26 +636,6 @@ void setup()
 
   attachInterrupt(pinIpTrig, syncInput, RISING);
 
-  // Interval in microsecs
-  if (ITimer1.attachInterruptInterval(TIMER1_INTERVAL_MS * 1000, TimerHandler1))
-  {
-    Serial.print(F("Starting ITimer1 OK, millis() = ")); Serial.println(millis());
-  }
-  else
-  {
-    Serial.println(F("Can't set ITimer1. Select another freq. or timer"));
-  }
-#if 0
-  parser.registerCommand("rep", "",  &cmd_report);
-  parser.registerCommand("fin", "d", &cmd_fin);
-  parser.registerCommand("med", "d", &cmd_med);
-  parser.registerCommand("coa", "d", &cmd_coa);
-  parser.registerCommand("abs", "d", &cmd_abs);
-  parser.registerCommand("step", "d", &cmd_step);
-  parser.registerCommand("auto", "", &cmd_automatic);
-  parser.registerCommand("del",  "d", &cmd_autodelay);
-  parser.registerCommand("amp",  "d", &cmd_amplitude);
- #endif 
   Serial.println("to show summary of current settings:");
   Serial.println("registered command: rep ");
   Serial.println();
@@ -934,7 +660,7 @@ void setup()
   Serial.println("Note medium step for 1 degree is absolute 30");
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
-  anglesUpdate();
+  abs2res(absolute);
   displayUpdate();
 
     /* INIT LCDML */
@@ -956,7 +682,8 @@ void setup()
 
 // activated when IMER_ INTERRUPT_ DEBUG > 2
 
-int /*void*/ printPWMInfo(RP2040_PWM* PWM_Instance)
+// sometimes compiler complains when this function declared with void return type
+/*int*/ void printPWMInfo(RP2040_PWM* PWM_Instance)
 {
   uint32_t div = PWM_Instance->get_DIV();
   uint32_t top = PWM_Instance->get_TOP();
@@ -967,8 +694,7 @@ int /*void*/ printPWMInfo(RP2040_PWM* PWM_Instance)
 
   PWM_LOGDEBUG5("TOP =", top, ", DIV =", div, ", CPU_freq =", PWM_Instance->get_freq_CPU());
 
-//  delay(100);
-  return 0;
+//  return 0;
 }
 
 // loop -----------------------------------------------------------------------------------------
@@ -978,110 +704,11 @@ void loop()
   static int refresh_time=0;
   static int old_absolute=0;
 
-#if 0
-  if (Serial.available()) {
-    char line[128];
-    size_t lineLength = Serial.readBytesUntil('\n', line, 127);
-    line[lineLength] = '\0';
-
-    char response[MyCommandParser::MAX_RESPONSE_SIZE];
-    if(!parser.processCommand(line, response))
-      Serial.println(response);
-  }
-#endif
-
   static int pos = 0;
   encoder.tick();
   // this function must called here, do not delete it
   LCDML.loop();
 
-#if 0
-  int newPos = encoder.getPosition();
-  
-  if(newPos < 0)
-  {
-    encoder.setPosition(0);
-    newPos = 0;
-  }
-
-  if (pos != newPos) 
-  {
-    #if 0
-    Serial.print("pos:");
-    Serial.print(newPos);
-    Serial.print(" dir:");
-    Serial.println((int)(encoder.getDirection()));
-    #endif
-    pos = newPos;
- 
-    if(!automatic)
-    {
-      absolute = pos * autostep;
-      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-      anglesUpdate();
-    }
-    awaken = true;
-  } // if
-#endif
-  if(buttonAPress)
-  {
-  //  Serial.println(F("Button A Pressed"));
-    buttonAPress= false;
-    automatic = true;
-    if(++delayidx > 2) delayidx = 0;
-    autodelay = delaylist[delayidx];
-    displayUpdate();
-    awaken = true;
-  }
-
-  if(buttonBPress)
-  {
-  //  Serial.println(F("Button B Pressed"));
-    buttonBPress= false;
-    automatic = false;
-    if(++stepidx > 2) stepidx = 0;
-    autostep = steplist[stepidx];
-    encoder.setPosition(absolute/autostep); // update encode value after auto run
-    displayUpdate();
-    awaken = true;
-  }
-
-#if 0
-  if(SWPressed == true)
-  {
-    if(++stepidx > 2) stepidx = 0;
-    autostep = steplist[stepidx];
-    encoder.setPosition(absolute/autostep); // update encode value after auto run
-    //displayUpdate();
-    old_absolute=!absolute;
-    awaken = true;
-  }
-#endif
-
-#if 1
-  if(SWLongPressed == true)
-  {
-    absolute = 0;
-    abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
-    anglesUpdate();
-    //displayUpdate();
-    old_absolute=!absolute;
-    awaken = true;
-  }
-#endif
-
-#if 0
-  if(encoderPress)
-  {
-    Serial.println(F("Encoder Button Pressed"));
-    encoderPress = false;
-    absolute = 0;
-    abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
-    anglesUpdate();
-//    displayUpdate();
-    awaken = true;
-  }
-#endif
 
   if(automatic)
   {
@@ -1093,42 +720,9 @@ void loop()
     {
       del_count=del_value;
       absolute += autostep;   
-      abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle); 
-      anglesUpdate();
+      abs2res(absolute);
     }
   }
-#if 0
-  // update display every 100mS if absolute value has changed
-  if (millis() - refresh_time > 100) 
-  {
-    static bool ledon = true;
-    digitalWrite(pinLED,ledon); // LED pulse output
-    if(awaken == true)
-    {
-      sleeptimer = SLEEPTIME;
-      awaken = false;
-    }
-    if(sleeptimer > 0)
-    {
-      sleeptimer -= 1;
-      asleep = false;
-      ledon = true;
-    }
-    else
-    {
-      ledon = ! ledon;
-      asleep = true;
-      displayDisable();
-    }
-
-    if(old_absolute != absolute)
-    {
-      old_absolute = absolute;
-      displayUpdate();
-    }
-    refresh_time = millis();
-  }
-#endif
 
 #if 0
   // Use at low freq to check

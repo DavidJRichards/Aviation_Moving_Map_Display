@@ -453,8 +453,7 @@ void mFunc_resetAbs(uint8_t param)
 
     // Jump to main screen
     absolute = 0;
-    abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-    anglesUpdate();
+    abs2res(absolute);
   }
   LCDML.FUNC_goBackToMenu();
 }

@@ -10,7 +10,7 @@ Fitted to Harrier aircraft ZD401:
 
 ## Photos
 
-[module images](./images)
+[module images](./images/README.md)
 
 [harrier photos](https://www.jetphotos.com/registration/ZD401)
 

@@ -112,8 +112,7 @@ void mDyn_abs(uint8_t line)
       if(LCDML.BT_checkUp())
       {
         absolute+=autostep;
-        abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-        anglesUpdate();
+        abs2res(absolute);
         LCDML.BT_resetUp();
       }
 
@@ -121,8 +120,7 @@ void mDyn_abs(uint8_t line)
       if(LCDML.BT_checkDown())
       {
         absolute-=autostep;
-        abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-        anglesUpdate();
+        abs2res(absolute);
         LCDML.BT_resetDown();
       }
 
@@ -130,16 +128,14 @@ void mDyn_abs(uint8_t line)
       if(LCDML.BT_checkLeft())
       {
         absolute+=autostep;
-        abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-        anglesUpdate();
+        abs2res(absolute);
       LCDML.BT_resetLeft();
       }
       
       if(LCDML.BT_checkRight())
       {
         absolute-=autostep;
-        abs2res(absolute, &transport.resolvers[0].angle, &transport.resolvers[1].angle, &transport.resolvers[2].angle);
-        anglesUpdate();
+        abs2res(absolute);
         LCDML.BT_resetRight();
       }
     }
