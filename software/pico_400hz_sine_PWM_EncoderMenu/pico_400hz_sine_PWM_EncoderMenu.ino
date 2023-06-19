@@ -164,31 +164,31 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // LCDMenuLib_addAdvanced(id, prev_layer, new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
 
 
-
   LCDML_addAdvanced ( 0 , LCDML_0   ,       1  ,  NULL,         ""               , mDyn_heading,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   LCDML_addAdvanced ( 1 , LCDML_0   ,       2  ,  NULL,         ""               , mDyn_ntos,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   LCDML_addAdvanced ( 2 , LCDML_0    ,      3  ,  NULL,         ""               , mDyn_absolute,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 3 , LCDML_0   ,       4  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 4 , LCDML_0   ,       5  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 5 , LCDML_0   ,       6  , COND_hide,     ""               , mDyn_para,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 3 , LCDML_0   ,       4  ,  NULL,         ""               , mDyn_fine,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 4 , LCDML_0   ,       5  ,  NULL,         ""               , mDyn_medium,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 5 , LCDML_0   ,       6  ,  NULL,         ""               , mDyn_coarse,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
 
   LCDML_add         ( 6 , LCDML_0        ,  7  , "Show settings"                 , mFunc_showSettings);       // this menu function can be found on "LCDML_display_menuFunction" tab
   LCDML_add         ( 7 , LCDML_0        ,  8  , "Toggle auto"                   , mFunc_toggleAuto);                                                       // NULL = no menu function
-
   LCDML_add         ( 8 , LCDML_0        ,  9  , "Reset abs"                     , mFunc_resetAbs);                                                         // NULL = no menu function
 
 
   LCDML_addAdvanced ( 9 , LCDML_0         ,10  , NULL,          "Stepsize"       , mFunc_para,        0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (10 , LCDML_0_5       , 1  , NULL,          "Stepsize 1"     , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (11 , LCDML_0_5       , 2  , NULL,          "Stepsize 30"    , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (12 , LCDML_0_5       , 3  , NULL,          "Stepsize 900"   , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (13 , LCDML_0_5       , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (10 , LCDML_0_10      , 1  , NULL,          "Stepsize 1"     , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (11 , LCDML_0_10      , 2  , NULL,          "Stepsize 30"    , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (12 , LCDML_0_10      , 3  , NULL,          "Stepsize 900"   , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (13 , LCDML_0_10      , 4  , NULL,          "Stepsize 27000" , mFunc_para,       54,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (14 , LCDML_0_10      , 6  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
 
-  LCDML_addAdvanced (14 , LCDML_0         ,11  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (15 , LCDML_0_10      , 1  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (16 , LCDML_0_10      , 2  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (17 , LCDML_0_10      , 3  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (18 , LCDML_0_10      , 4  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (15 , LCDML_0         ,11  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (16 , LCDML_0_11      , 1  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (17 , LCDML_0_11      , 2  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (18 , LCDML_0_11      , 3  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (19 , LCDML_0_11      , 4  , NULL,          "AutoDelay 1000" , mFunc_para,      64,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (20 , LCDML_0_11      , 5  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
 
 
   // Example for dynamic content
@@ -201,7 +201,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // 1. define a condition as a function of a boolean type -> return false = not displayed, return true = displayed
   // 2. set the function name as callback (remove the braces '()' it gives bad errors)
   // LCDMenuLib_addAdvanced(id, prev_layer,     new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (19 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (21 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // Example function for event handling (only serial output in this example)  
 //  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
@@ -210,7 +210,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    19
+  #define _LCDML_DISP_cnt    21
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -219,7 +219,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 // I/O pin definitions
 // *********************************************************************
 
-#define ENCODER_PIN_IN2    20
+#define ENCODER_PIN_IN2    21
 #define ENCODER_PIN_IN1    22
 #define encoder_button_pin 26
 
@@ -248,9 +248,8 @@ TFT_eSPI display = TFT_eSPI();
 #define ButtonX       14    // PWM 7A
 #define ButtonY       15    // PWM 7B
 
-//                          0A 1A 2A 3A 0B 1B 2B  3B 4A 4B 5A  5B
-uint32_t PWM_Pins[]     = { 0, 2, 4, 6, 1, 3, 21, 7, 8, 9, 10, 11  };
-//uint32_t PWM_Pins[]     = { 8, 9, 10, 11, 0, 2, 4, 6, 1, 3, 21, 7,  };
+// PWM channel              0A 0B 1A 1B 2A 2B 3A 3B 4A 4B 5A  5B
+uint32_t PWM_Pins[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11  };
 #define NUM_OF_PINS NUMELE(PWM_Pins)
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
@@ -379,6 +378,9 @@ float autostep =  30;
 bool  automatic = false;
 int   autodelay = 10;
 float absolute =  0.0;
+float fine = 0.0;
+float medium = 0.0;
+float coarse = 0.0;
 float heading = 0.0;
 float ntos = 0.0;
 int amplitude=DIV_CONST;
@@ -513,9 +515,9 @@ void abs2res(long bump)
   float target;
   absolute += bump;
   if(absolute < 0) absolute = 0;
-  transport.resolvers[2].angle = (absolute / ratio2) - offset_coarse;
-  transport.resolvers[1].angle = (int(absolute) / ratio1) % 360;
-  transport.resolvers[0].angle  =   int(absolute)           % 360;
+  coarse = transport.resolvers[2].angle = (absolute / ratio2) - offset_coarse;
+  medium = transport.resolvers[1].angle = fmod(absolute / ratio1, 360);
+  fine   = transport.resolvers[0].angle = fmod(absolute,          360);
 
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
@@ -533,6 +535,38 @@ void abs2res(long bump)
   transport.resolvers[3].amplitude[0] = 500.0;
   transport.resolvers[3].amplitude[1] = -500.0;
 }
+
+void fine2res(long bump)
+{
+  float target;
+  fine = fmod(fine+bump,360);
+
+  transport.resolvers[0].angle  =   fine;
+  target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
+  transport.resolvers[0].amplitude[0] = sin(target) * 500;
+  transport.resolvers[0].amplitude[1] = cos(target) * 500;
+}
+void medium2res(long bump)
+{
+  float target;
+  medium = fmod(medium+bump,360);
+
+  transport.resolvers[1].angle  =   medium;
+  target = fmod(transport.resolvers[1].angle, 360) * M_PI/180.0;
+  transport.resolvers[1].amplitude[0] = sin(target) * 500;
+  transport.resolvers[1].amplitude[1] = cos(target) * 500;
+}
+void coarse2res(long bump)
+{
+  float target;
+  coarse = fmod(coarse+bump,360);
+
+  transport.resolvers[2].angle  =   coarse;
+  target = fmod(transport.resolvers[2].angle, 360) * M_PI/180.0;
+  transport.resolvers[2].amplitude[0] = sin(target) * 500;
+  transport.resolvers[2].amplitude[1] = cos(target) * 500;
+}
+
 void heading2res(long bump)
 {
   float target;
@@ -727,6 +761,9 @@ void setup()
   Serial.println("Note medium step for 1 degree is absolute 30");
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
+  fine2res(0);
+  medium2res(0);
+  coarse2res(0);
   abs2res(0);
   heading2res(0);
   ntos2res(0);
@@ -789,8 +826,8 @@ void loop()
     {
       del_count=del_value;
       abs2res(autostep);
-      heading2res(autostep);
-      ntos2res(autostep);
+      //heading2res(autostep);
+      //ntos2res(autostep);
 
     }
   }

@@ -48,6 +48,8 @@ Information supplied by Erik Baigar, Munich.
 
 ## Exercise software
 
+[software versions](./software/README.md)
+
 ### Development of map transport exerciser using Raspberrypi Pico 2040 
 
 The software simulates three 400 Hz resolver tranmitters and provides a reference sinewave.

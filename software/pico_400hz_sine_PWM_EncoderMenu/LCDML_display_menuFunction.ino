@@ -502,6 +502,10 @@ void mFunc_para(uint8_t param)
         autostep = 900;// do something
         break;
 
+      case 54:
+        autostep = 27000;// do something
+        break;
+
       case 61:
         autodelay = 1; // do something
         break;
@@ -512,6 +516,10 @@ void mFunc_para(uint8_t param)
 
       case 63:
         autodelay = 100;// do something
+        break;
+
+      case 64:
+        autodelay = 1000;// do something
         break;
 
       default:
