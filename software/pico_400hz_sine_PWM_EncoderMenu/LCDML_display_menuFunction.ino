@@ -491,35 +491,51 @@ void mFunc_para(uint8_t param)
     switch(param)
     {
       case 51:
-        autostep = 1; // do something
+        autostep = 1;
         break;
 
       case 52:
-        autostep = 30;// do something
+        autostep = 30;
         break;
 
       case 53:
-        autostep = 900;// do something
+        autostep = 900;
         break;
 
       case 54:
-        autostep = 27000;// do something
+        autostep = 27000;
         break;
 
       case 61:
-        autodelay = 1; // do something
+        autodelay = 1;
         break;
 
       case 62:
-        autodelay = 10;// do something
+        autodelay = 10;
         break;
 
       case 63:
-        autodelay = 100;// do something
+        autodelay = 100;
         break;
 
       case 64:
-        autodelay = 1000;// do something
+        autodelay = 1000;
+        break;
+
+      case 71:
+        sine_table.sync_offset = 0;
+        break;
+
+      case 72:
+        sine_table.sync_offset = NUM_SINE_ELEMENTS/4;
+        break;
+
+      case 73:
+        sine_table.sync_offset = NUM_SINE_ELEMENTS/2;
+        break;
+
+      case 74:
+        sine_table.sync_offset = NUM_SINE_ELEMENTS/4 + NUM_SINE_ELEMENTS/2;
         break;
 
       default:
@@ -536,7 +552,7 @@ void mFunc_para(uint8_t param)
     display.println(buf); 
 
 
-    if (LCDML.BT_checkAny()) // check if any button is pressed (enter, up, down, left, right)
+//    if (LCDML.BT_checkAny()) // check if any button is pressed (enter, up, down, left, right)
     {
       LCDML.FUNC_goBackToMenu();  // leave this function
     }

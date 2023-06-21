@@ -130,39 +130,8 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 // *********************************************************************
 // LCDML MENU/DISP
 // *********************************************************************
-  // LCDML_0        => layer 0
-  // LCDML_0_X      => layer 1
-  // LCDML_0_X_X    => layer 2
-  // LCDML_0_X_X_X  => layer 3
-  // LCDML_0_...      => layer ...
-
-  // For beginners
   // LCDML_add(id, prev_layer, new_num, lang_char_array, callback_function)
-/*
-  LCDML_add         (0  , LCDML_0         , 1  , "Information"      , mFunc_information);       // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (1  , LCDML_0         , 2  , "Time info"        , mFunc_timer_info);        // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (2  , LCDML_0         , 3  , "Program"          , NULL);                    // NULL = no menu function
-  LCDML_add         (3  , LCDML_0_3       , 1  , "Program 1"        , NULL);                    // NULL = no menu function
-  LCDML_add         (4  , LCDML_0_3_1     , 1  , "P1 dummy"         , NULL);                    // NULL = no menu function
-  LCDML_add         (5  , LCDML_0_3_1     , 2  , "P1 Settings"      , NULL);                    // NULL = no menu function
-  LCDML_add         (6  , LCDML_0_3_1_2   , 1  , "Warm"             , NULL);                    // NULL = no menu function
-  LCDML_add         (7  , LCDML_0_3_1_2   , 2  , "Cold"             , NULL);                    // NULL = no menu function
-  LCDML_add         (8  , LCDML_0_3_1_2   , 3  , "Back"             , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (9  , LCDML_0_3_1     , 3  , "Back"             , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (10 , LCDML_0_3       , 2  , "Program 2"        , mFunc_p2);                // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (11 , LCDML_0_3       , 3  , "Back"             , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (12 , LCDML_0         , 4  , "Special"          , NULL);                    // NULL = no menu function
-  LCDML_add         (13 , LCDML_0_4       , 1  , "Go to Root"       , mFunc_goToRootMenu);      // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (14 , LCDML_0_4       , 2  , "Jump to Time info", mFunc_jumpTo_timer_info); // this menu function can be found on "LCDML_display_menuFunction" tab
-  LCDML_add         (15 , LCDML_0_4       , 3  , "Back"             , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
-*/
-
-  // Advanced menu (for profit) part with more settings
-  // Example for one function and different parameters
-  // It is recommend to use parameters for switching settings like, (small drink, medium drink, big drink) or (200ml, 400ml, 600ml, 800ml) ...
-  // the parameter change can also be released with dynParams on the next example
   // LCDMenuLib_addAdvanced(id, prev_layer, new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-
 
   LCDML_addAdvanced ( 0 , LCDML_0   ,       1  ,  NULL,         ""               , mDyn_heading,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   LCDML_addAdvanced ( 1 , LCDML_0   ,       2  ,  NULL,         ""               , mDyn_ntos,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
@@ -171,25 +140,37 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   LCDML_addAdvanced ( 4 , LCDML_0   ,       5  ,  NULL,         ""               , mDyn_medium,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   LCDML_addAdvanced ( 5 , LCDML_0   ,       6  ,  NULL,         ""               , mDyn_coarse,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
 
-  LCDML_add         ( 6 , LCDML_0        ,  7  , "Show settings"                 , mFunc_showSettings);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_add         ( 6 , LCDML_0        ,  7  , "Show settings"                 , mFunc_showSettings); 
   LCDML_add         ( 7 , LCDML_0        ,  8  , "Toggle auto"                   , mFunc_toggleAuto);                                                       // NULL = no menu function
   LCDML_add         ( 8 , LCDML_0        ,  9  , "Reset abs"                     , mFunc_resetAbs);                                                         // NULL = no menu function
 
 
   LCDML_addAdvanced ( 9 , LCDML_0         ,10  , NULL,          "Stepsize"       , mFunc_para,        0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (10 , LCDML_0_10      , 1  , NULL,          "Stepsize 1"     , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (11 , LCDML_0_10      , 2  , NULL,          "Stepsize 30"    , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (12 , LCDML_0_10      , 3  , NULL,          "Stepsize 900"   , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (13 , LCDML_0_10      , 4  , NULL,          "Stepsize 27000" , mFunc_para,       54,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (14 , LCDML_0_10      , 6  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (10 , LCDML_0_10      , 1  , NULL,          ""               , mDyn_stepsize,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (11 , LCDML_0_10      , 2  , NULL,          "Stepsize 1"     , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (12 , LCDML_0_10      , 3  , NULL,          "Stepsize 30"    , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (13 , LCDML_0_10      , 4  , NULL,          "Stepsize 900"   , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (14 , LCDML_0_10      , 5  , NULL,          "Stepsize 27000" , mFunc_para,       54,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (15 , LCDML_0_10      , 6  , "Back"        , mFunc_back);
 
-  LCDML_addAdvanced (15 , LCDML_0         ,11  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (16 , LCDML_0_11      , 1  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (17 , LCDML_0_11      , 2  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (18 , LCDML_0_11      , 3  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (19 , LCDML_0_11      , 4  , NULL,          "AutoDelay 1000" , mFunc_para,      64,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (20 , LCDML_0_11      , 5  , "Back"        , mFunc_back);              // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (16 , LCDML_0         ,17  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (17 , LCDML_0_17      , 1  , NULL,          ""               , mDyn_autodelay,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (18 , LCDML_0_17      , 2  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (19 , LCDML_0_17      , 3  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (20 , LCDML_0_17      , 4  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (21 , LCDML_0_17      , 5  , NULL,          "AutoDelay 1000" , mFunc_para,      64,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (22 , LCDML_0_17      , 6  , "Back"        , mFunc_back); 
 
+  LCDML_addAdvanced (23 , LCDML_0   ,      13  ,  NULL,         ""               , mDyn_amplitude,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (24 , LCDML_0   ,      14  ,  NULL,         ""               , mDyn_amplitude2,  0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+
+  LCDML_addAdvanced (25 , LCDML_0         ,26  , NULL,          "Ref Phase"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (26 , LCDML_0_26      , 1  , NULL,          ""               , mDyn_refPhase,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (27 , LCDML_0_26      , 2  , NULL,          "Ref Phase 0"    , mFunc_para,      71,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (28 , LCDML_0_26      , 3  , NULL,          "Ref Phase 90"   , mFunc_para,      72,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (29 , LCDML_0_26      , 4  , NULL,          "Ref Phase 180"  , mFunc_para,      73,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (30 , LCDML_0_26      , 5  , NULL,          "Ref Phase 270"  , mFunc_para,      74,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (31 , LCDML_0_26      , 6  , "Back"        , mFunc_back); 
 
   // Example for dynamic content
   // 1. set the string to ""
@@ -201,7 +182,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // 1. define a condition as a function of a boolean type -> return false = not displayed, return true = displayed
   // 2. set the function name as callback (remove the braces '()' it gives bad errors)
   // LCDMenuLib_addAdvanced(id, prev_layer,     new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (21 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (32 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // Example function for event handling (only serial output in this example)  
 //  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
@@ -210,7 +191,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    21
+  #define _LCDML_DISP_cnt    32
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -219,59 +200,51 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 // I/O pin definitions
 // *********************************************************************
 
-#define ENCODER_PIN_IN2    21
-#define ENCODER_PIN_IN1    22
-#define encoder_button_pin 26
+
+#define ButtonA             12    // PWM 6A
+#define ButtonB             13    // PWM 6B
+//#define ButtonX             14    // PWM 7A
+//#define ButtonY             15    // PWM 7B
+
+#define pinOpSync           14
+#define pinIpTrig           15
+
+/* these are defined in User_Setup.h
+#define TFT_DC              16
+#define TFT_CS              17
+#define TFT_RST             -1 // Or set to -1 and connect to Arduino RESET pin
+#define TFT_SCLK            18
+#define TFT_MOSI            19
+//define TFT_MISO           ?? // not needed
+*/
+
+#define encoder_button_pin  20 
+#define ENCODER_PIN_IN2     21
+#define ENCODER_PIN_IN1     22
 
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
 RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
 
-/* these are defined in User_Setup.h
-#define TFT_CS        17
-#define TFT_RST       -1 // Or set to -1 and connect to Arduino RESET pin
-#define TFT_DC        16
-#define TFT_MOSI      19
-#define TFT_SCLK      18
-*/
+// unavailable: SMPS        23
+// unavailable: Vbus sense  24
+
+#define pinLED              25    // On-board BUILTIN_LED
+
+// ADC pins now unused - and available
+#define unused26            26    // adc0
+#define unused27            27    // adc1
+#define unused28            28    // adc2
 
 TFT_eSPI display = TFT_eSPI();
 
-#define LED_ON        LOW
-#define LED_OFF       HIGH
+#define LED_ON              LOW
+#define LED_OFF             HIGH
 
-#define pinLED        25    // On-board BUILTIN_LED
-#define pinOpSync     27    // 
-#define pinIpTrig     28
-
-#define ButtonA       12    // PWM 6A
-#define ButtonB       13    // PWM 6B
-#define ButtonX       14    // PWM 7A
-#define ButtonY       15    // PWM 7B
-
-// PWM channel              0A 0B 1A 1B 2A 2B 3A 3B 4A 4B 5A  5B
+//                          Fine Medium Coarse Ref Heading NtoS
+// PWM channel              0A 0B 1A 1B 2A 2B 3A 3B 4A 4B 5A 5B
 uint32_t PWM_Pins[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11  };
 #define NUM_OF_PINS NUMELE(PWM_Pins)
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
-
-/*        PWM channel reference
-#define pin1          0     // PWM channel 0A tx
-#define pin2          1     // PWM channel 0B rx
-#define pin4          2     // PWM channel 1A gp2
-#define pin5          3     // PWM channel 1B int
-#define pin6          4     // PWM channel 2A sda
-#define pin7          5/21  // PWM channel 2B scl
-#define pin9          6     // PWM channel 3A r
-#define pin10         7     // PWM channel 3B g
-#define pin11         8     // PWM channel 4A b (mot1-)
-#define pin12         9     // PWM channel 4B   (mot1+)
-#define pin14         10    // PWM channel 5A   (mot2-)
-#define pin15         11    // PWM channel 5B   (mot2+)
-#define pin16         12    // PWM channel 6A (button A)
-#define pin17         13    // PWM channel 6B (button B)
-#define pin34         28    // PWM channel 6A adc2
-#define pin19         14    // PWM channel 7A (button x)
-#define pin20         15    // PWM channel 7B (button y)
-*/
 
 uint16_t PWM_data_idle_top = 1330; // to give 100 kHz PWM with 133MHz clock
 uint8_t PWM_data_idle_div = 1;
@@ -297,12 +270,11 @@ float PWM_dutyCycle = 50.0f;
 // 1E6Hz  / 400Hz / (20) = . uS timer interval
 // 125 = 400.0 Hz
 
-#define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
+#define NUM_SINE_ELEMENTS 100        // steps per cycle of 400Hz wave
 // choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
-#define SYNC_OFFSET_COUNT 4
-#define PULSE_OFFSET_COUNT 2
-#define DIV_CONST 740
+#define SYNC_OFFSET_COUNT 4         // sin table index to use when sync pulse detected
+#define PULSE_OFFSET_COUNT 2        // sine table index to use for sync output pulse
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
@@ -383,31 +355,37 @@ float medium = 0.0;
 float coarse = 0.0;
 float heading = 0.0;
 float ntos = 0.0;
-int amplitude=DIV_CONST;
+
+#define AMPLITUDE_FS 16.33    // volts rms ful scale output, measured
+#define DIV_CONST 768         // divisor for desired 12 volt ouput
+#define REF_CONST 1136        // divisor for 8 volt reference output
+#define DIV_FACT  560         // multiplier, for menu voltage out calculation - found by experiment
+int amplitude_div=DIV_CONST;
+int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit amplifier power dissipation
 
 
-#if 0
-struct pos_details_ {
-  float *position_angle;
-  int   transport_number;
-  }pos_details[] ={
-    &absolute, ABSOLUTE,
-    &heading, HEADING,
-    &ntos,  NtoS,
-};
-#endif
+//#define H6_DISPLAY
+/*
+  when H6_DISPLY is defined softwre has following changes
+  Heading outputs connects to roll inputs, resolver calc changed to synchro calc
+  NtoS outputs connects to pitch inputs, resolver calc changed to synchro calc
+  Fine control output on Coarse sin output connects to verticle needle input, - sin output
+  Medium control output on Coarse cos output connects to horizontal needle input, - sin output 
+  Sync input is fed from isolated 400Hz zero crossing detector fed by 400Hz 115V display power supply.
+*/
 
 
+//-------------------------------------------------------------------------------------------
 
 void build_sintable(void)
 {
   int n;
-  sine_table.stepsize = 360 / sine_table.num_elements;
+  sine_table.stepsize = 360.0 / sine_table.num_elements;
   sine_table.timer_interval = 1E6 / sine_table.sinewave_frequency / sine_table.num_elements;
 
   for(n=0; n<sine_table.num_elements; n++)
   {
-    sine_table.levels[n] = int(sin(M_PI*(n*sine_table.stepsize)/180.0) * 512);          // table entries -512 to +512
+    sine_table.levels[n] = int(sin(M_PI*(n*sine_table.stepsize)/180.0) * 512.0);          // table entries -512 to +512
   }
 
 #if 1
@@ -436,6 +414,7 @@ void build_sintable(void)
 // PWM duty change used in stepping sine values of 400 Hz waveforms
 bool TimerHandler0(struct repeating_timer *t)
 { 
+  static bool pulse_sent=false;
   (void) t;
   int16_t int_sine_step_value;
   uint16_t dc_levels[NUM_OF_PINS];
@@ -452,40 +431,67 @@ bool TimerHandler0(struct repeating_timer *t)
 // sine_table is +- 512 ( 10 bits )
 // scale is +- 500 (10 bits )
 // product is 20 bits - needs to be 10 - so divide by 10 bits 
-  dc_levels[0] = MID_POINT_INT +    transport.resolvers[0].amplitude[0]  * int_sine_step_value / amplitude;
+  dc_levels[0] = MID_POINT_INT +    transport.resolvers[0].amplitude[0]  * int_sine_step_value / amplitude_div;
   PWM_Instance[0]->setPWM_manual_Fast(PWM_Pins[0], dc_levels[0]);
-  dc_levels[1] = MID_POINT_INT +    transport.resolvers[0].amplitude[1]  * int_sine_step_value / amplitude;
+  dc_levels[1] = MID_POINT_INT +    transport.resolvers[0].amplitude[1]  * int_sine_step_value / amplitude_div;
   PWM_Instance[1]->setPWM_manual_Fast(PWM_Pins[1], dc_levels[1]);
 
-  dc_levels[2] = MID_POINT_INT +    transport.resolvers[1].amplitude[0]  * int_sine_step_value / amplitude;
+  dc_levels[2] = MID_POINT_INT +    transport.resolvers[1].amplitude[0]  * int_sine_step_value / amplitude_div;
   PWM_Instance[2]->setPWM_manual_Fast(PWM_Pins[2], dc_levels[2]);
-  dc_levels[3] = MID_POINT_INT +    transport.resolvers[1].amplitude[1]  * int_sine_step_value / amplitude;
+  dc_levels[3] = MID_POINT_INT +    transport.resolvers[1].amplitude[1]  * int_sine_step_value / amplitude_div;
   PWM_Instance[3]->setPWM_manual_Fast(PWM_Pins[3], dc_levels[3]);
 
-  dc_levels[4] = MID_POINT_INT +    transport.resolvers[2].amplitude[0]  * int_sine_step_value / amplitude;
+  dc_levels[4] = MID_POINT_INT +    transport.resolvers[2].amplitude[0]  * int_sine_step_value / amplitude_div;
   PWM_Instance[4]->setPWM_manual_Fast(PWM_Pins[4], dc_levels[4]);
-  dc_levels[5] = MID_POINT_INT +    transport.resolvers[2].amplitude[1]  * int_sine_step_value / amplitude;
+  dc_levels[5] = MID_POINT_INT +    transport.resolvers[2].amplitude[1]  * int_sine_step_value / amplitude_div;
   PWM_Instance[5]->setPWM_manual_Fast(PWM_Pins[5], dc_levels[5]);
 
-  dc_levels[6] = MID_POINT_INT +   transport.resolvers[3].amplitude[0] * int_sine_step_value / amplitude; // reference +sinewave output
+  dc_levels[6] = MID_POINT_INT +   transport.resolvers[3].amplitude[0] * int_sine_step_value / amplitude_ref; // reference +sinewave output
   PWM_Instance[6]->setPWM_manual_Fast(PWM_Pins[6], dc_levels[6]);
-  dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / amplitude; // reference -sinewave output
+  dc_levels[7] = MID_POINT_INT +   transport.resolvers[3].amplitude[1] * int_sine_step_value / amplitude_ref; // reference -sinewave output
   PWM_Instance[7]->setPWM_manual_Fast(PWM_Pins[7], dc_levels[7]);
 
-  dc_levels[8] = MID_POINT_INT +   transport.resolvers[4].amplitude[0] * int_sine_step_value / amplitude;
+  dc_levels[8] = MID_POINT_INT +   transport.resolvers[4].amplitude[0] * int_sine_step_value / amplitude_div;
   PWM_Instance[8]->setPWM_manual_Fast(PWM_Pins[8], dc_levels[8]);
-  dc_levels[9] = MID_POINT_INT +   transport.resolvers[4].amplitude[1] * int_sine_step_value / amplitude;
+  dc_levels[9] = MID_POINT_INT +   transport.resolvers[4].amplitude[1] * int_sine_step_value / amplitude_div;
   PWM_Instance[9]->setPWM_manual_Fast(PWM_Pins[9], dc_levels[9]);
 
-  dc_levels[10] = MID_POINT_INT +   transport.resolvers[5].amplitude[0] * int_sine_step_value / amplitude;
+  dc_levels[10] = MID_POINT_INT +   transport.resolvers[5].amplitude[0] * int_sine_step_value / amplitude_div;
   PWM_Instance[10]->setPWM_manual_Fast(PWM_Pins[10], dc_levels[10]);
-  dc_levels[11] = MID_POINT_INT +   transport.resolvers[5].amplitude[1] * int_sine_step_value / amplitude;
+  dc_levels[11] = MID_POINT_INT +   transport.resolvers[5].amplitude[1] * int_sine_step_value / amplitude_div;
   PWM_Instance[11]->setPWM_manual_Fast(PWM_Pins[11], dc_levels[11]);
 
-  digitalWrite(pinOpSync,step_index == PULSE_OFFSET_COUNT); // sync pulse output
+  
+
+  if(step_index >= PULSE_OFFSET_COUNT)
+  {
+    if(pulse_sent == false)
+    {
+      digitalWrite(pinOpSync, 0);
+      pulse_sent=true;
+    }
+  }
+  else
+  {
+    if(pulse_sent == true)
+    {
+      digitalWrite(pinOpSync, 1);    
+      pulse_sent = false;
+    }
+  }
+
+//  digitalWrite(pinOpSync,step_index < PULSE_OFFSET_COUNT); // sync pulse output
+
   step_index++;
   return true;
 }
+
+void ref_phase_update(long bump)
+{
+
+  sine_table.sync_offset += bump;  
+}
+
 
 // ISR for frequency sync input
 void syncInput(void) {
@@ -540,11 +546,14 @@ void fine2res(long bump)
 {
   float target;
   fine = fmod(fine+bump,360);
-
   transport.resolvers[0].angle  =   fine;
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
+#ifndef H6_DISPLAY 
   transport.resolvers[0].amplitude[0] = sin(target) * 500;
   transport.resolvers[0].amplitude[1] = cos(target) * 500;
+#else
+  transport.resolvers[2].amplitude[0] = -sin(target) * 500;
+#endif
 }
 void medium2res(long bump)
 {
@@ -553,8 +562,12 @@ void medium2res(long bump)
 
   transport.resolvers[1].angle  =   medium;
   target = fmod(transport.resolvers[1].angle, 360) * M_PI/180.0;
+#ifndef H6_DISPLAY
   transport.resolvers[1].amplitude[0] = sin(target) * 500;
   transport.resolvers[1].amplitude[1] = cos(target) * 500;
+#else
+  transport.resolvers[2].amplitude[1] = -sin(target) * 500;
+#endif
 }
 void coarse2res(long bump)
 {
@@ -571,22 +584,39 @@ void heading2res(long bump)
 {
   float target;
   heading = fmod(heading+bump,360);
-
   transport.resolvers[4].angle  =   heading;
+#ifndef H6_DISPLAY
+  // output to resolver receiver
   target = fmod(transport.resolvers[4].angle, 360) * M_PI/180.0;
   transport.resolvers[4].amplitude[0] = sin(target) * 500;
   transport.resolvers[4].amplitude[1] = cos(target) * 500;
+#else
+  // output to synchro receiver
+  target = fmod(transport.resolvers[4].angle+120, 360) * M_PI/180.0;
+  transport.resolvers[4].amplitude[0] = sin(target) * 500;
+
+  target = -fmod(transport.resolvers[4].angle+240, 360) * M_PI/180.0;
+  transport.resolvers[4].amplitude[1] = sin(target) * 500;
+#endif  
 }
 
 void ntos2res(long bump)
 {
   float target;
   ntos = fmod(ntos+bump,360);
-
   transport.resolvers[5].angle  =   ntos;
+#ifndef H6_DISPLAY
   target = fmod(transport.resolvers[5].angle, 360) * M_PI/180.0;
   transport.resolvers[5].amplitude[0] = sin(target) * 500;
   transport.resolvers[5].amplitude[1] = cos(target) * 500;
+#else
+  // output to synchro receiver
+  target = fmod(transport.resolvers[5].angle+120, 360) * M_PI/180.0;
+  transport.resolvers[5].amplitude[0] = sin(target) * 500;
+
+  target = -fmod(transport.resolvers[5].angle+240, 360) * M_PI/180.0;
+  transport.resolvers[5].amplitude[1] = sin(target) * 500;
+#endif
 }
 
 // screensaver
@@ -665,7 +695,7 @@ void displayUpdate(void)
   Serial.print(automatic);
 
   Serial.print(", Amp = ");
-  Serial.println(amplitude);
+  Serial.println(amplitude_div);
 
   Serial.print("Absolute = ");
   Serial.println(absolute);
@@ -761,10 +791,10 @@ void setup()
   Serial.println("Note medium step for 1 degree is absolute 30");
   Serial.println("Note coarse step for 1 degree is absolute 900");
  
-  fine2res(0);
-  medium2res(0);
-  coarse2res(0);
   abs2res(0);
+  coarse2res(0);
+  medium2res(0);
+  fine2res(0);
   heading2res(0);
   ntos2res(0);
   displayUpdate();
@@ -777,8 +807,8 @@ void setup()
     LCDML.MENU_enRollover();
 
     // Enable Screensaver (screensaver menu function, time to activate in ms)
-    LCDML.SCREEN_enable(mFunc_screensaver, 60000); // set to 60 seconds
-    //LCDML.SCREEN_disable();
+    //LCDML.SCREEN_enable(mFunc_screensaver, 60000); // set to 60 seconds
+    LCDML.SCREEN_disable();
 
     // Some needful methods
 
@@ -825,8 +855,8 @@ void loop()
     if(del_value - del_count > autodelay)
     {
       del_count=del_value;
-      abs2res(autostep);
-      //heading2res(autostep);
+      //abs2res(autostep);
+      heading2res(autostep);
       //ntos2res(autostep);
 
     }
