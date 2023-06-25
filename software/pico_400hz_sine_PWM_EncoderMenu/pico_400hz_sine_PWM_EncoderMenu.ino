@@ -73,7 +73,7 @@
   
   // settings for  lcd
   #define _LCDML_lcd_w       240            // lcd width
-  #define _LCDML_lcd_h       240             // lcd height
+  #define _LCDML_lcd_h       320             // lcd height
  
   // nothing change here
   #define _LCDML_cols_max    (_LCDML_lcd_w/_LCDML_FONT_W)  
@@ -184,6 +184,8 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   LCDML_addAdvanced (38 , LCDML_0_34      , 5  , NULL,          "C-Offset -90"   , mFunc_para,      84,            _LCDML_TYPE_default);                    // NULL = no menu function
   LCDML_add         (39 , LCDML_0_34      , 6  , "Back"        , mFunc_back); 
 
+  LCDML_addAdvanced (40 , LCDML_0         , 35 , NULL,          ""               , mDyn_M_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (41 , LCDML_0         , 36 , NULL,          ""               , mDyn_F_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   // Example for dynamic content
   // 1. set the string to ""
   // 2. use type  _LCDML_TYPE_dynParam   instead of    _LCDML_TYPE_default
@@ -194,7 +196,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // 1. define a condition as a function of a boolean type -> return false = not displayed, return true = displayed
   // 2. set the function name as callback (remove the braces '()' it gives bad errors)
   // LCDMenuLib_addAdvanced(id, prev_layer,     new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (40 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (42 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // Example function for event handling (only serial output in this example)  
 //  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
@@ -203,7 +205,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    40
+  #define _LCDML_DISP_cnt    42
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -285,7 +287,7 @@ float PWM_dutyCycle = 50.0f;
 #define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
 // choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
-#define SYNC_OFFSET_COUNT 4         // sin table index to use when sync pulse detected
+#define SYNC_OFFSET_COUNT 6         // sin table index to use when sync pulse detected
 #define PULSE_OFFSET_COUNT 2        // sine table index to use for sync output pulse
 
 struct sine_table_ {
@@ -362,6 +364,7 @@ volatile int frequency_save;
 
 // menu variables TODO use transport structure variables
 float autostep =  2;
+float ntos_autostep =  15;
 bool  automatic = false;
 int   autodelay = 10;
 float absolute =  0.0;
@@ -369,9 +372,11 @@ float fine = 0.0;
 float medium = 0.0;
 float coarse = 0.0;
 float heading = 0.0;
-float ntos = 0.0;
+float ntos = 90.0;
 
-int coarse_offset=0; //90;         // film at left hand end of roll, abs 0
+int coarse_offset = -90;         // film at left hand end of roll, abs 0
+int medium_offset = 76;         //
+int fine_offset = 0;
 #define AMPLITUDE_FS 16.33    // volts rms ful scale output, measured
 #define DIV_CONST 768         // divisor for desired 12 volt ouput
 #define REF_CONST 1520        // divisor for 6 volt reference output
@@ -379,7 +384,7 @@ int coarse_offset=0; //90;         // film at left hand end of roll, abs 0
 int amplitude_div=DIV_CONST;
 int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit amplifier power dissipation
 
-//#define HEADING_SYNCHRO
+#define HEADING_SYNCHRO
 /*
   when H6_DISPLY is defined softwre has following changes
   Heading outputs connects to roll inputs, resolver calc changed to synchro calc
@@ -535,15 +540,22 @@ void abs2res(float bump)
 
   absolute += bump;
   if(absolute < 0) absolute = 0;
-  #if 1
-  coarse = transport.resolvers[2].angle = (absolute / ratio2) + coarse_offset;
-  medium = transport.resolvers[1].angle = fmod(absolute / ratio1, 360);
-  fine   = transport.resolvers[0].angle = fmod(absolute,          360);
-  #else
-  coarse = transport.resolvers[2].angle = (absolute / ratio2) + coarse_offset;
-  medium = transport.resolvers[1].angle = remainder(absolute / ratio1, 360);
-  fine   = transport.resolvers[0].angle = remainder(absolute,          360);
-  #endif
+  //#if 1
+  transport.resolvers[2].angle =      (absolute / ratio2) + coarse_offset;
+  coarse = transport.resolvers[2].angle =      (absolute / ratio2);
+
+  transport.resolvers[1].angle = fmod((absolute / ratio1) + medium_offset, 360);
+  medium = transport.resolvers[1].angle = fmod((absolute / ratio1), 360);
+//  medium = transport.resolvers[1].angle = fmod((absolute / ratio1) + medium_offset, 360);
+  
+  transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
+  fine   = transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
+//  fine   = transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
+  //#else
+  //coarse = transport.resolvers[2].angle = (absolute / ratio2) + coarse_offset;
+  //medium = transport.resolvers[1].angle = remainder(absolute / ratio1, 360);
+  //fine   = transport.resolvers[0].angle = remainder(absolute,          360);
+  //#endif
 
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
@@ -690,7 +702,7 @@ void displayUpdate(void)
     display.print(transport.resolvers[i].angle);
     display.println("\xF7"); // degree symbol
 
-#if 1
+#if 0
     display.print(transport.resolvers[i].PWM[0].name);
     display.print("=");
     display.print(transport.resolvers[i].level[0],1);
@@ -846,6 +858,7 @@ void setup()
 
   Serial.println("Core0 setup finished");
   core0ready = true;
+  setup0();
 }
 
 // activated when IMER_ INTERRUPT_ DEBUG > 2
@@ -865,9 +878,9 @@ void setup()
 //  return 0;
 }
 
-void setup1()
+void setup0()
 {
-  delay(5000);        // dont know why this is needed as well as next line
+//  delay(5000);        // dont know why this is needed as well as next line
   while(!core0ready)  // wait for setup1 to finish ...
   {
     tight_loop_contents();
@@ -917,14 +930,15 @@ void loop()
     if(del_value - del_count > autodelay)
     {
       del_count=del_value;
-      //abs2res(autostep);
-      heading2res(autostep);
+      abs2res(autostep);
+      //heading2res(autostep);
       //ntos2res(autostep);
-
+#if 0
       Serial.print("freq=");
       Serial.print(frequency_save*1000/autodelay);
       Serial.println("Hz");
       frequency_save=0;
+#endif      
     }
   }
 
