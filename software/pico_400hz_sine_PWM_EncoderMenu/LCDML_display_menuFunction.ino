@@ -491,18 +491,22 @@ void mFunc_para(uint8_t param)
     switch(param)
     {
       case 51:
-        autostep = 1;
+        autostep = 0.2;
         break;
 
       case 52:
-        autostep = 30;
+        autostep = 2;
         break;
 
       case 53:
-        autostep = 900;
+        autostep = 30;
         break;
 
       case 54:
+        autostep = 900;
+        break;
+
+      case 55:
         autostep = 27000;
         break;
 
@@ -523,20 +527,40 @@ void mFunc_para(uint8_t param)
         break;
 
       case 71:
-        sine_table.sync_offset = 0;
+        sine_table.sync_offset = SYNC_OFFSET_COUNT;
         break;
 
       case 72:
-        sine_table.sync_offset = NUM_SINE_ELEMENTS/4;
+        sine_table.sync_offset = SYNC_OFFSET_COUNT+NUM_SINE_ELEMENTS/4;
         break;
 
       case 73:
-        sine_table.sync_offset = NUM_SINE_ELEMENTS/2;
+        sine_table.sync_offset = SYNC_OFFSET_COUNT+NUM_SINE_ELEMENTS/2;
         break;
 
       case 74:
-        sine_table.sync_offset = NUM_SINE_ELEMENTS/4 + NUM_SINE_ELEMENTS/2;
+        sine_table.sync_offset = SYNC_OFFSET_COUNT+3*NUM_SINE_ELEMENTS/4.;
         break;
+
+      case 81:
+        coarse_offset = 0;
+        abs2res(0);
+        break;
+
+      case 82:
+        coarse_offset = 90;
+        abs2res(0);
+        break;
+
+      case 83:
+        coarse_offset = 180;
+        abs2res(0);
+       break;
+
+      case 84:
+        coarse_offset = -90;
+        abs2res(0);
+       break;
 
       default:
         // do nothing

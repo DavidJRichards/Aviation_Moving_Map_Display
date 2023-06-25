@@ -432,8 +432,9 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 |31,32|Gnd?   ||
 |37,38|-16 V  ||
 |51,52|+16 V  ||
-|57   | 26 VAC|400 Hz Reference      |
-|  60 |  0 VAC|Reference return      |
+|57   | 12 VAC|400 Hz +Reference ext_p48 |
+|  60 | 12 VAC|400 Hz -Reference ext_p49 |
+|   ? |  0 VAC|400 Hz Ref Common ct&gnd  |  
 
 ## Front panel switches
 

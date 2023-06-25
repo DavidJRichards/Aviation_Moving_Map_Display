@@ -13,6 +13,12 @@
   https://github.com/khoih-prog/RPI_PICO_TimerInterrupt
   https://github.com/Uberi/Arduino-CommandParser
 
+  // LCD MENU library
+  https://github.com/Jomelo/LCDMenuLib2
+
+  // TFT graphics library
+  https://github.com/Bodmer/TFT_eSPI
+
   // Rotary Encoder library
   http://www.mathertel.de/Arduino/RotaryEncoderLibrary.aspx
 
@@ -45,10 +51,8 @@
 
 #include "RPi_Pico_TimerInterrupt.h" // pwm duty cycle change timer 
 #include <math.h>            // use sin and cos functions in main loop only
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>             // used by LCD display
+#include "TFT_eSPI.h"
 #include <CommandParser.h>   // serial commands
 #include "RP2040_PWM.h"      // to define PWM channels
 #include <RotaryEncoder.h>
@@ -63,17 +67,10 @@
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
 RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
 
-
-#define TFT_CS        17
-#define TFT_RST       -1 // Or set to -1 and connect to Arduino RESET pin
-#define TFT_DC        16
-#define TFT_MOSI      19
-#define TFT_SCLK      18
-
 typedef CommandParser<> MyCommandParser;
 MyCommandParser parser;
 
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+TFT_eSPI tft = TFT_eSPI();
 
 #if ( defined(ARDUINO_NANO_RP2040_CONNECT) || defined(ARDUINO_RASPBERRY_PI_PICO) || defined(ARDUINO_ADAFRUIT_FEATHER_RP2040) || \
       defined(ARDUINO_GENERIC_RP2040) ) && defined(ARDUINO_ARCH_MBED)
@@ -436,15 +433,15 @@ void anglesUpdate(void)
 // screensaver
 void displayDisable(void)
 {
-    tft.fillScreen(ST77XX_BLACK);
-    tft.setTextColor(ST77XX_BLACK);
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_BLACK);
 }
 
 // show common system settings and individual PWM channel settings
 void displayUpdate(void)
 {
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_GREEN);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_GREEN);
   tft.setTextSize(2);
   tft.println();
   Serial.println("=====================");
@@ -667,11 +664,11 @@ bool TimerHandler1(struct repeating_timer *t)
 
 void setup()
 {
-  tft.init(240, 240);           // Init ST7789 240x240
-  tft.setRotation(2);
-  tft.setSPISpeed(40000000);
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextColor(ST77XX_GREEN);
+  tft.init();           // Init ST7789 240x240
+//  tft.setRotation(2);
+//  tft.setSPISpeed(40000000);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_GREEN);
   tft.setTextSize(3);
   tft.println("Resolver PWM");
 
@@ -925,8 +922,8 @@ void loop()
     }
   }
 
-  // update display every second if absolute value has changed
-  if (millis() - refresh_time > 1000) 
+  // update display every 100mS if absolute value has changed
+  if (millis() - refresh_time > 100) 
   {
     static bool ledon = true;
     digitalWrite(pinLED,ledon); // LED pulse output
