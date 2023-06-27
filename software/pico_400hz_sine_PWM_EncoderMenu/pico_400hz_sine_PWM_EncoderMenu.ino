@@ -261,6 +261,7 @@ uint32_t PWM_Pins[]     = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11  };
 RP2040_PWM* PWM_Instance[NUM_OF_PINS];
 
 uint16_t PWM_data_idle_top = 1330; // to give 100 kHz PWM with 133MHz clock
+//uint16_t PWM_data_idle_top = 924; // to give 14.069 kHz PWM with 133MHz clock
 uint8_t PWM_data_idle_div = 1;
 
 // You can select any value
@@ -300,10 +301,7 @@ struct sine_table_ {
 } sine_table;
 
 int stepidx=1;
-int steplist[] = {1,30,900};
-
 int delayidx=1;
-float delaylist[] = {10.0 ,100.0, 1000.0 };
 
 #define TIMER1_INTERVAL_MS        20
 #define DEBOUNCING_INTERVAL_MS    100
@@ -363,8 +361,8 @@ volatile int step_index = 0;
 volatile int frequency_save;
 
 // menu variables TODO use transport structure variables
-float autostep =  2;
-float ntos_autostep =  15;
+float autostep =  1;
+float ntos_autostep =  2;
 bool  automatic = false;
 int   autodelay = 10;
 float absolute =  0.0;
@@ -372,19 +370,20 @@ float fine = 0.0;
 float medium = 0.0;
 float coarse = 0.0;
 float heading = 0.0;
-float ntos = 90.0;
+float ntos = 0.0;
+int ntos_offset = 90;
 
 int coarse_offset = -90;         // film at left hand end of roll, abs 0
-int medium_offset = 76;         //
+int medium_offset = 63;         //
 int fine_offset = 0;
 #define AMPLITUDE_FS 16.33    // volts rms ful scale output, measured
-#define DIV_CONST 768         // divisor for desired 12 volt ouput
+#define DIV_CONST 832         // divisor for desired 11 volt ouput
 #define REF_CONST 1520        // divisor for 6 volt reference output
 #define DIV_FACT  560         // multiplier, for menu voltage out calculation - found by experiment
 int amplitude_div=DIV_CONST;
 int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit amplifier power dissipation
 
-#define HEADING_SYNCHRO
+//#define HEADING_SYNCHRO
 /*
   when H6_DISPLY is defined softwre has following changes
   Heading outputs connects to roll inputs, resolver calc changed to synchro calc
@@ -528,8 +527,9 @@ void syncInput(void) {
 }
 
 // these constants represent the gearing between the resolvers 
-const int ratio1 = 30;        // fine to medium
-const int ratio2 = ratio1*30; // fine to coarse
+const float ratio0 = (32.2727272727/1.00979); // medium to coarse
+const float ratio2 = (1041.5289256198/1.00979/1.00333); //ratio1*30; // fine to coarse
+const float ratio1 = (ratio2/ratio0);//30;        // fine to medium
 
 #define offset_coarse 0  // range on coarse is -90 to +90, so offset is +90 (to verify)
 
@@ -540,22 +540,15 @@ void abs2res(float bump)
 
   absolute += bump;
   if(absolute < 0) absolute = 0;
-  //#if 1
+
   transport.resolvers[2].angle =      (absolute / ratio2) + coarse_offset;
   coarse = transport.resolvers[2].angle =      (absolute / ratio2);
 
   transport.resolvers[1].angle = fmod((absolute / ratio1) + medium_offset, 360);
-  medium = transport.resolvers[1].angle = fmod((absolute / ratio1), 360);
-//  medium = transport.resolvers[1].angle = fmod((absolute / ratio1) + medium_offset, 360);
+  medium = fmod((absolute / ratio1), 360);
   
   transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
-  fine   = transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
-//  fine   = transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
-  //#else
-  //coarse = transport.resolvers[2].angle = (absolute / ratio2) + coarse_offset;
-  //medium = transport.resolvers[1].angle = remainder(absolute / ratio1, 360);
-  //fine   = transport.resolvers[0].angle = remainder(absolute,          360);
-  //#endif
+  fine   = fmod((absolute)          + fine_offset,   360);
 
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
@@ -600,7 +593,7 @@ void medium2res(long bump)
 #ifndef H6_DISPLAY
 //  transport.resolvers[1].amplitude[0] = sin(target) * 500;
 //  transport.resolvers[1].amplitude[1] = cos(target) * 500;
-  abs2res(30*bump);
+  abs2res(ratio1*bump);
 #else
   transport.resolvers[2].amplitude[1] = -sin(target) * 500;
 #endif
@@ -615,7 +608,7 @@ void coarse2res(long bump)
   target = fmod(transport.resolvers[2].angle, 360) * M_PI/180.0;
 //  transport.resolvers[2].amplitude[0] = sin(target) * 500;
 //  transport.resolvers[2].amplitude[1] = cos(target) * 500;
-  abs2res(900*bump);
+  abs2res(ratio2*bump);
 }
 
 void heading2res(long bump)
@@ -642,8 +635,10 @@ void ntos2res(long bump)
 {
   float target;
   ntos = fmod(ntos+bump,360);
-  transport.resolvers[5].angle  =   ntos;
+  transport.resolvers[5].angle = fmod(ntos+bump + ntos_offset,360);
 #ifndef NTOS_SYNCHRO
+  if(ntos<-90)ntos=-90;
+  if(ntos>90)ntos=90;
   target = fmod(transport.resolvers[5].angle, 360) * M_PI/180.0;
   transport.resolvers[5].amplitude[0] = sin(target) * 500;
   transport.resolvers[5].amplitude[1] = cos(target) * 500;
@@ -822,10 +817,15 @@ void setup()
   Serial.println(" kHz");
 
   attachInterrupt(pinIpTrig, syncInput, RISING);
+//#endif
+  Serial.print("medium to coarse (given): ");
+  Serial.println(ratio0);
 
-  Serial.println("Note fine step for 1 degree is absolute 1");
-  Serial.println("Note medium step for 1 degree is absolute 30");
-  Serial.println("Note coarse step for 1 degree is absolute 900");
+  Serial.print("fine to coarse(given): ");
+  Serial.println(ratio1);
+
+  Serial.print("fine to medium (calc): ");
+  Serial.println(ratio2);
 #endif 
 
 // these functions transfer user settings into working values for timer PWM generation.
@@ -902,11 +902,22 @@ void setup0()
     Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
   }
   else
+  {
     Serial.println(F("Can't set ITimer0. Select another freq. or timer"));
+  }
 
   Serial.print("PWM Actual frequency[7] = ");
   Serial.print(PWM_Instance[7]->getActualFreq()/10);
   Serial.println(" kHz");
+
+  Serial.print("medium to coarse (given): ");
+  Serial.println(ratio0);
+
+  Serial.print("fine to coarse(given): ");
+  Serial.println(ratio1);
+
+  Serial.print("fine to medium (calc): ");
+  Serial.println(ratio2);
 
 }
 // loop -----------------------------------------------------------------------------------------

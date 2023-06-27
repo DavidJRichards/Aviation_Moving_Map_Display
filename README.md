@@ -20,11 +20,13 @@ Fitted to Harrier aircraft ZD401:
 
 ![overview](./images/overview.jpg)
 
-![map-Newport](./images/Map_Newport.jpg)
+![map-Newport](./images/Map-Ryedale.jpg)
 
 [UK Grid Reference Finder](https://gridreferencefinder.com/#gr=ST3068378370|51.5_s__c__s_-3|1)
 
 [UK Latitude and Longitude Map](https://www.mapsofworld.com/lat_long/united-kingdom-lat-long.html)
+
+[Military chasrt symbols Gen 2.3](https://www.aidu.mod.uk/aip/pdf/gen/GEN-2-3.pdf)
 
 #### More information on similar device:
 
@@ -48,6 +50,8 @@ Information supplied by Erik Baigar, Munich.
 
 ## Exercise software
 
+![testbech-setup](images/testbech-setup.png)
+
 [software versions](./software/README.md)
 
 ### Development of map transport exerciser using Raspberrypi Pico 2040 
@@ -56,6 +60,12 @@ The software simulates three 400 Hz resolver tranmitters and provides a referenc
 Present version drives three pairs of sine/cosine outputs, and an additional pair of sinewave outputs 180 degree apart as reference.
 Resolver simulation is controlled by serial commands, push buttons, and a rotary encoder.
 Console is accesed by USB at 115200 bps with a terminal program or the arduino IDE.
+
+### Doxygen project
+
+There is a Doxygen project file to create additional documentation of the software and libraries used. this readme and the module pictures get included. The doygen html needs to be created by running doxywizard. the html is not included in this repositary.
+
+[Doxyfile](./Doxyfile)
 
 ### PWM
 
@@ -127,7 +137,34 @@ Video shows input voltage being raised from 0 to 115 VAC 400Hz
 
 [AND9282 - Mains Synchronization for PLC Modems](https://www.mikrocontroller.net/attachment/346746/AND9282-D_AC_Zero_Crossing.pdf)
 
-#### Serial commands
+#### LCD / Encoder menu system
+
+![LCD-Menu](images/LCD-Menu.png)
+
+
+|Item|
+|---------------|
+|Heading|
+|N to S |
+|Absolute|
+|Fine|
+|Medium|
+|Coarse|
+|Show Settings|
+|Toggle Automatic|
+|Reset Absolute|
+|Stepsize|
+|AutoDelay|
+|Vout|
+|Vref|
+|Ref Phase|
+|Coarse Offset|
+|M Offset|
+|F Offset|
+
+
+
+#### Serial commands (not implemented in present version)
 
 Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 degrees, similar commands med, and cou, for medium and coarse settings.
 
@@ -160,49 +197,51 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
 
 |GP Pin|Function|
 |------|--------|
-|12|Button A|
-|13|Button B|
-|14|Button X|
-|15|Button Y|
-|||
 |16|TFT DC|
 |17|TFT CS|
 |18|TFT SCLK|
 |19|TFT MOSI|
-|||
-|20|ENCODER IN2|
 |22|ENCODER IN1|
-|26|ENCODER SW|
-|||
+|21|ENCODER IN2|
+|20|ENCODER SW|
 | 0|PWM 0 |
-| 2|PWM 1 |
-| 4|PWM 2|
-| 6|PWM 3|
-| 1|PWM 4|
-| 3|PWM 5|
-|21|PWM 6|
+| 1|PWM 1 |
+| 2|PWM 2|
+| 3|PWM 3|
+| 4|PWM 4|
+| 5|PWM 5|
+| 6|PWM 6|
 | 7|PWM 7|
-|||
-|25|LED|
-|27|Sync OP|
-|28|Trig IP|
+| 8|PWM 8|
+| 9|PWM 9|
+|10|PWM 10|
+|11|PWM 11|
+|14|Sync OP|
+|15|Trig IP|
 
 ### Amplifier interconnections
 
 |Channel|Res|PWM|GPIO|Amp|R-L|Pin|
 |-------|---|---|----|---|---|---|
-|Fine   |sin| 0 |  0 | 1 | R |51 |
-|Fine   |cos| 1 |  2 | 1 | L |52 |
+|Fine   |sin| 0A|  0 | 1 | R |51 |
+|Fine   |cos| 0B|  1 | 1 | L |52 |
 |Fine   |com| - |  - | - | C |53 |
-|Medium |sin| 2 |  4 | 2 | R |59 |
-|Medium |cos| 3 |  6 | 2 | L |60 |
+|Medium |sin| 1A|  2 | 2 | R |59 |
+|Medium |cos| 1B|  3 | 2 | L |60 |
 |Medium |com| - |  - | - | C |61 |
-|Coarse |sin| 4 |  1 | 3 | R |64 |
-|Coarse |cos| 5 |  3 | 3 | L |65 |
+|Coarse |sin| 2A|  4 | 3 | R |64 |
+|Coarse |cos| 2B|  5 | 3 | L |65 |
 |Coarse |com| - |  - | - | C |66 |
-|Ref    | - | 6 | 21 | 4 | R |48?|
-|Ref    | + | 7 |  7 | 4 | L |49?|
+|Ref    | - | 3A|  6 | 4 | R |48?|
+|Ref    | + | 3B|  7 | 4 | L |49?|
 |Ref    |com| - |  - | - | C |47 |
+|Heading|sin| 4A|  8 | 5 | R |43|
+|Heading|cos| 4B|  9 | 5 | L |44|
+|Heading|com| - |  - | - | C |45|
+|N to S |sin| 5A| 10 | 6 | R |54|
+|N to S |cos| 5B| 11 | 6 | L |55|
+|N to S |com| - |  - | - | C |56|
+
 
 #### Initial conditions
 
@@ -233,29 +272,15 @@ Approximate representation showing supposed overlap of resolver rotations.
 ##### Absolute to resolver conversion
 
 ```
-const int ratio1 = 30;
-const int ratio2 = ratio1*30;
+const float ratio1 = 31.9;
+const float ratio2 = ratio1*32.1;
 
 void abs2res(long absolute, float *fine, float *medium, float *coarse)
 {
         *coarse = (absolute / ratio2) - offset_coarse;
-        *medium = (absolute / ratio1) % 360;
-        *fine  =   absolute           % 360;
+        *medium = fmod((absolute / ratio1), 360);
+        *fine   = fmod( absolute          , 360);
 
-}
-```
-
-##### Resolver to absolute conversion
-
-```
-const int ratio1 = 30;
-const int ratio2 = ratio1*30;
-
-unsigned long res2abs(int fine, int medium, int coarse)
-{
-    return (fine % ratio1)     
-    + (ratio1 * (medium % ratio1))   
-    + (ratio2 * (coarse % ratio2));
 }
 ```
 
@@ -265,7 +290,9 @@ A 400Hz 24 VAC reference signal from the module power supply is attenuated and c
 
 The PWM outputs are fed through a RC filter to form the analogue resolver signals. each channel is red through a 1K resistor and has a 100nF capacator to ground.
 
-Each pair of resolver signals is fed to a dual LM1875 amlifier to drive the module inputs. The amplifier gain is adjusted to give the required output level by tweaking its feedback resitor. (10K in parallel with existing 20k resistor)
+The signal output level is chosen to avaoid output clipping in the audio amplifiers.
+
+Each pair of resolver signals is fed to a dual LM1875 amlifier to drive the module inputs.
 
 A reference 400Hz is availabe on a seventh channel (unused)
 
@@ -276,8 +303,6 @@ A Reference pulse output is available to trigger the oscilloscope.
 ![oscilloscope](./images/oscilloscope.jpg)
 
 ![amplifier](./images/amplifier.jpg)
-
-![amplifier-resistor-change](./images/amplifier-resistor-change.jpg)
 
 ![amplifier-gain-adjusted](./images/amplifier-gain-adjusted.jpg)
 
@@ -322,74 +347,76 @@ A Reference pulse output is available to trigger the oscilloscope.
 | ?|  1  | -ve         |DC Return     |
 |02|  2  | Neutral     |400Hz Return  |
 |03|  3  | 115VAC      |400Hz Power   |
-|04||||
-|05||||
-|06||n/c|
-|07||n/c|
-|08||n/c|
+|04| | | |
+|05| | | |
+|06| |n/c| |
+|07| |n/c| |
+|08| |n/c| |
 |09|  9  | 0V          |Chassis       |
-|10|10||input DAY/NIGHT control |
-|11||||
-|12||n/c||
-|13||n/c||
-|14||n/c||
-|15||||
+|10|10| |input DAY/NIGHT control |
+|11| | | |
+|12| |n/c| |
+|13| |n/c| |
+|14| |n/c| |
+|15| | | |
 |16|     |728k to -ve  |+ve relay? ip|
-|17||||
-|18||||
-|19||n/c||
-|20||n/c||
-|21||||
+|17| | | |
+|18| | | |
+|19| |n/c| |
+|20| |n/c| |
+|21| | | |
 |22|     | 11R to 32 |V prop to I lamp|
-|23||||
-|24||||
-|25||||
+|23| | | |
+|24| | | |
+|25| | | |
 |26|  4  | +28V DC     |DC Power      |
 |27| 17  | +28V DC     |DC Power      |
-|28||||
-|29||||
-|30|30||input to RPMD inhibiting map drive|
-|31||||
+|28| | | |
+|29| | | |
+|30|30| |input to RPMD inhibiting map drive|
+|31| | | |
 |32| 32  | -ve         |DC Return     |
-|33||||
+|33| | | |
 
 <br>
 
-|Pin #|Alt #|Function  |Note          |
-|-----|-----|----------|------------  |
-|34| 34 |12 v op      |Scale switch-a|
-|35| 35 |12 v op      |Scale switch-b|
-|36| 36 |12 v op   |Function switch-a|
-|37| 37 |12 v op   |Function switch-b|
-|38| 38 |12 v op   |Function switch-c|
-|39||n/c||
-|40|40|235R to 41||STB Lamp when positive|
-|41|41|235R to 40||NTH UP lamp when positive|
-|42| 42  |+28V DC      |Mains-on ip   |
-|43| 43  | a           |Heading-a     |
-|44| 44  | b           |Heading-b     |
-|45| 45  | common      |Heading-com   |
-|46||||
-|47| 47  |  0V         |Reference common|
-|48| 48  | +12V 400Hz  |Reference       |
-|49| 49  | -12V 400Hz  |Reference       |
-|50||||
-|51| 51  | a           |Fine-a        |
-|52| 52  | b           |Fine-b        |
-|53| 53  | common      |Fine-com      |
-|54| 54  | a           |N/S-a         |
-|55| 55  | b           |N/S-b         |
-|56| 56  | common      |N/S-com       |
-|57||n/c||
-|58||n/c||
-|59| 59  | a           |Medium-a      |
-|60| 60  | b           |Medium-b      |
-|61| 61  | common      |Medium-com    |
-|62||n/c||
-|63||n/c||
-|64| 64  | X3 yellow   |Coarse-a      |
-|65| 65  | X3 red      |Coarse-b      |
-|66| 66  | X3 black    |Coarse-com    |
+
+|Pin #|Alt #|Function     |Note             |
+|-----|-----|-------------|-----------------|
+| 34  | 34  |12 v op      |Scale switch-a   |
+| 35  | 35  |12 v op      |Scale switch-b   |
+| 36  | 36  |12 v op      |Function switch-a|
+| 37  | 37  |12 v op      |Function switch-b|
+| 38  | 38  |12 v op      |Function switch-c|
+| 39  |     |n/c          |                 |
+| 40  | 40  |235R to 41 |STB Lamp when positive|
+| 41  | 41  |235R to 40 |NTH UP lamp when positive|
+| 42  | 42  |+28V DC      |Mains-on ip   |
+| 43  | 43  | a           |Heading-a     |
+| 44  | 44  | b           |Heading-b     |
+| 45  | 45  | common      |Heading-com   |
+| 46  |     |             |              |
+| 47  | 47  |  0V         |Reference common|
+| 48  | 48  | +12V 400Hz  |Reference       |
+| 49  | 49  | -12V 400Hz  |Reference       |
+| 50  |     |             |              |
+| 51  | 51  | a           |Fine-a        |
+| 52  | 52  | b           |Fine-b        |
+| 53  | 53  | common      |Fine-com      |
+| 54  | 54  | a           |N/S-a         |
+| 55  | 55  | b           |N/S-b         |
+| 56  | 56  | common      |N/S-com       |
+| 57  |     | n/c         |              |
+| 58  |     | n/c         |              |
+| 59  | 59  | a           |Medium-a      |
+| 60  | 60  | b           |Medium-b      |
+| 61  | 61  | common      |Medium-com    |
+| 62  |     | n/c         |              |
+| 63  |     | n/c         |              |
+| 64  | 64  | X3 yellow   |Coarse-a      |
+| 65  | 65  | X3 red      |Coarse-b      |
+| 66  | 66  | X3 black    |Coarse-com    |
+
 
 pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 

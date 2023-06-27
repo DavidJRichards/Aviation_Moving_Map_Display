@@ -133,6 +133,11 @@ IMG_20230518_084442.jpg
 </tr>
 <tr>
 <td valign="bottom">
+<img src="./LCD-Menu.png" width="200"><br>
+LCD-Menu.png
+</td>
+
+<td valign="bottom">
 <img src="./LCD_status.jpg" width="200"><br>
 LCD_status.jpg
 </td>
@@ -143,6 +148,13 @@ LCD_status2.jpg
 </td>
 
 <td valign="bottom">
+<img src="./Map-Ryedale.jpg" width="200"><br>
+Map-Ryedale.jpg
+</td>
+
+</tr>
+<tr>
+<td valign="bottom">
 <img src="./Map_Newport.jpg" width="200"><br>
 Map_Newport.jpg
 </td>
@@ -152,8 +164,6 @@ Map_Newport.jpg
 Output-filter-12-channel-PWM.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./ProjectLogo.jpg" width="200"><br>
 ProjectLogo.jpg
@@ -164,6 +174,8 @@ ProjectLogo.jpg
 QA_1003_Byers_zero-crossing-rev.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./RC-Filter.png" width="200"><br>
 RC-Filter.png
@@ -174,8 +186,6 @@ RC-Filter.png
 amplifier-gain-adjusted.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./amplifier-resistor-change.jpg" width="200"><br>
 amplifier-resistor-change.jpg
@@ -186,6 +196,8 @@ amplifier-resistor-change.jpg
 amplifier.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./breadboard.jpg" width="200"><br>
 breadboard.jpg
@@ -196,8 +208,6 @@ breadboard.jpg
 breadboard2.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.jpg" width="200"><br>
 circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.jpg
@@ -208,6 +218,8 @@ circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.
 connector.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./improved-opto-detector.png" width="200"><br>
 improved-opto-detector.png
@@ -218,8 +230,6 @@ improved-opto-detector.png
 media-1180431-a-circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period-fig-1.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./opto-detector.png" width="200"><br>
 opto-detector.png
@@ -230,9 +240,16 @@ opto-detector.png
 oscilloscope.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./overview.jpg" width="200"><br>
 overview.jpg
+</td>
+
+<td valign="bottom">
+<img src="./testbech-setup.png" width="200"><br>
+testbech-setup.png
 </td>
 
 <td valign="bottom">
@@ -240,13 +257,13 @@ overview.jpg
 zero-crossing-schematic.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./zero-crossing.jpg" width="200"><br>
 zero-crossing.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./zero-crossing.png" width="200"><br>
 zero-crossing.png

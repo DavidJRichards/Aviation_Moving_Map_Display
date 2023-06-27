@@ -499,11 +499,11 @@ void mFunc_para(uint8_t param)
         break;
 
       case 53:
-        autostep = 30;
+        autostep = ratio2;  //30
         break;
 
       case 54:
-        autostep = 900;
+        autostep = ratio1; // 900
         break;
 
       case 55:
