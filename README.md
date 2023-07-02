@@ -5,8 +5,11 @@ Ferranti: Display, Moving Map
 Ref.No 3892/79850
 NSN 6610-99-787-8922
 
-
 Fitted to Harrier aircraft ZD401:
+
+## Demo Video
+
+[Map movement](https://youtube.com/shorts/AGmHbEKlPaY)
 
 ## Photos
 

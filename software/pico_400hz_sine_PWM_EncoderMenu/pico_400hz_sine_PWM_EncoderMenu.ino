@@ -54,6 +54,18 @@
 //#include <FreeRTOS.h>
 //#include <semphr.h>
 
+#define _USING_MCP32017
+
+#ifdef USING_MCP32017
+#include <Wire.h>
+#include <MCP23017.h>
+#define MCP_ADDRESS 0x20 // (A2/A1/A0 = LOW)
+#define MCP_SDA   26
+#define MCP_SCL   27
+#define RESET_PIN 28 
+// pins 26 & 27 need to use second i2c device Wire1 
+MCP23017 myMCP = MCP23017(&Wire1, MCP_ADDRESS, RESET_PIN);
+#endif
 
 #define _LCDML_cfg_use_ram 
 #include <LCDMenuLib2.h>  
@@ -62,6 +74,8 @@
 #include <SPI.h>             // used by LCD display
 //#define DISABLE_ALL_LIBRARY_WARNINGS
 #define DISABLE_TOUCH_LIBRARY_WARNING
+// changes setings in TFT_SPI User_Setup.h
+#define _USING_PICO_EXPLORER_BOARD
 #include <TFT_eSPI.h>
 
   #define _LCDML_TEXT_COLOR       TFT_WHITE
@@ -73,8 +87,11 @@
   
   // settings for  lcd
   #define _LCDML_lcd_w       240            // lcd width
+  #ifndef USING_PICO_EXPLORER_BOARD
   #define _LCDML_lcd_h       320             // lcd height
- 
+  #else
+  #define _LCDML_lcd_h       240             // lcd height
+  #endif
   // nothing change here
   #define _LCDML_cols_max    (_LCDML_lcd_w/_LCDML_FONT_W)  
   #define _LCDML_rows_max    (_LCDML_lcd_h/_LCDML_FONT_H) 
@@ -168,24 +185,17 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   LCDML_addAdvanced (24 , LCDML_0   ,      13  ,  NULL,         ""               , mDyn_amplitude,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   LCDML_addAdvanced (25 , LCDML_0   ,      14  ,  NULL,         ""               , mDyn_amplitude2,  0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
 
-  LCDML_addAdvanced (26 , LCDML_0         ,27  , NULL,          "Ref Phase"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (27 , LCDML_0_27      , 1  , NULL,          ""               , mDyn_refPhase,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (28 , LCDML_0_27      , 2  , NULL,          "Ref Phase 0"    , mFunc_para,      71,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (29 , LCDML_0_27      , 3  , NULL,          "Ref Phase 90"   , mFunc_para,      72,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (30 , LCDML_0_27      , 4  , NULL,          "Ref Phase 180"  , mFunc_para,      73,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (31 , LCDML_0_27      , 5  , NULL,          "Ref Phase 270"  , mFunc_para,      74,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (32 , LCDML_0_27      , 6  , "Back"        , mFunc_back); 
+//  LCDML_addAdvanced (26 , LCDML_0         ,27  , COND_hide,          "Ref Phase"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (26 , LCDML_0        , 28  , NULL,          ""               , mDyn_refPhase,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+//  LCDML_addAdvanced (28 , LCDML_0_27      , 2  , NULL,          "Ref Phase 0"    , mFunc_para,      71,            _LCDML_TYPE_default);                    // NULL = no menu function
+//  LCDML_addAdvanced (29 , LCDML_0_27      , 3  , NULL,          "Ref Phase 90"   , mFunc_para,      72,            _LCDML_TYPE_default);                    // NULL = no menu function
+//  LCDML_addAdvanced (30 , LCDML_0_27      , 4  , NULL,          "Ref Phase 180"  , mFunc_para,      73,            _LCDML_TYPE_default);                    // NULL = no menu function
+//  LCDML_addAdvanced (31 , LCDML_0_27      , 5  , NULL,          "Ref Phase 270"  , mFunc_para,      74,            _LCDML_TYPE_default);                    // NULL = no menu function
+//  LCDML_add         (32 , LCDML_0_27      , 6  , "Back"        , mFunc_back); 
 
-  LCDML_addAdvanced (33 , LCDML_0         ,34  , NULL,          "Coarse-Offset"  , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (34 , LCDML_0_34      , 1  , NULL,          ""               , mDyn_C_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (35 , LCDML_0_34      , 2  , NULL,          "C-Offset 0"     , mFunc_para,      81,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (36 , LCDML_0_34      , 3  , NULL,          "C-Offset 90"    , mFunc_para,      82,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (37 , LCDML_0_34      , 4  , NULL,          "C-Offset 180"   , mFunc_para,      83,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (38 , LCDML_0_34      , 5  , NULL,          "C-Offset -90"   , mFunc_para,      84,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (39 , LCDML_0_34      , 6  , "Back"        , mFunc_back); 
-
-  LCDML_addAdvanced (40 , LCDML_0         , 35 , NULL,          ""               , mDyn_M_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (41 , LCDML_0         , 36 , NULL,          ""               , mDyn_F_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (27 , LCDML_0         , 35 , NULL,          ""               , mDyn_C_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Coarse
+  LCDML_addAdvanced (28 , LCDML_0         , 36 , NULL,          ""               , mDyn_M_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Medium
+  LCDML_addAdvanced (29 , LCDML_0         , 37 , NULL,          ""               , mDyn_F_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Fine
   // Example for dynamic content
   // 1. set the string to ""
   // 2. use type  _LCDML_TYPE_dynParam   instead of    _LCDML_TYPE_default
@@ -196,7 +206,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // 1. define a condition as a function of a boolean type -> return false = not displayed, return true = displayed
   // 2. set the function name as callback (remove the braces '()' it gives bad errors)
   // LCDMenuLib_addAdvanced(id, prev_layer,     new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
-  LCDML_addAdvanced (42 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
+  LCDML_addAdvanced (30 ,      LCDML_0         , 12  ,    COND_hide,  "screensaver"        , mFunc_screensaver,        0,   _LCDML_TYPE_default);       // this menu function can be found on "LCDML_display_menuFunction" tab
 
   // Example function for event handling (only serial output in this example)  
 //  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
@@ -205,7 +215,7 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    42
+  #define _LCDML_DISP_cnt    30
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -239,15 +249,17 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
 // Setup a RotaryEncoder with 2 steps per latch for the 2 signal input pins:
 RotaryEncoder encoder(ENCODER_PIN_IN1, ENCODER_PIN_IN2, RotaryEncoder::LatchMode::TWO03);
 
+RotaryEncoder encoder2(ButtonA, ButtonB, RotaryEncoder::LatchMode::TWO03);
+
 // unavailable: SMPS        23
 // unavailable: Vbus sense  24
 
 #define pinLED              25    // On-board BUILTIN_LED
 
 // ADC pins now unused - and available
-#define unused26            26    // adc0
-#define unused27            27    // adc1
-#define unused28            28    // adc2
+#define unused26            26    // adc0 i2c1-SDA
+#define unused27            27    // adc1 i2c1-SCL
+#define unused28            28    // adc2 reset
 
 TFT_eSPI display = TFT_eSPI();
 
@@ -288,8 +300,8 @@ float PWM_dutyCycle = 50.0f;
 #define NUM_SINE_ELEMENTS 36        // steps per cycle of 400Hz wave
 // choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
-#define SYNC_OFFSET_COUNT 6         // sin table index to use when sync pulse detected
-#define PULSE_OFFSET_COUNT 2        // sine table index to use for sync output pulse
+#define SYNC_OFFSET_COUNT 6         // sin table index to use when sync pulse detected (ref phase)
+#define PULSE_OFFSET_COUNT 2        // sine table index to use for sync output pulse (pulse position)
 
 struct sine_table_ {
   int num_elements=NUM_SINE_ELEMENTS;
@@ -362,24 +374,25 @@ volatile int frequency_save;
 
 // menu variables TODO use transport structure variables
 float autostep =  1;
-float ntos_autostep =  2;
+//float ntos_autostep =  1;
+#define ntos_autostep autostep
 bool  automatic = false;
 int   autodelay = 10;
-float absolute =  0.0;
+float absolute =  514.6;
 float fine = 0.0;
 float medium = 0.0;
 float coarse = 0.0;
 float heading = 0.0;
-float ntos = 0.0;
+float ntos = 20.0;
 int ntos_offset = 90;
 
 int coarse_offset = -90;         // film at left hand end of roll, abs 0
-int medium_offset = 63;         //
+int medium_offset = 65;         //
 int fine_offset = 0;
-#define AMPLITUDE_FS 16.33    // volts rms ful scale output, measured
-#define DIV_CONST 832         // divisor for desired 11 volt ouput
-#define REF_CONST 1520        // divisor for 6 volt reference output
-#define DIV_FACT  560         // multiplier, for menu voltage out calculation - found by experiment
+#define AMPLITUDE_FS 15.16 //16.33    // volts rms ful scale output, measured
+#define DIV_CONST 608         // divisor for 13 volt resolver outputs       832         // divisor for desired 11 volt ouput
+#define REF_CONST 608         // divisor for 13 volt reference output (26 v phase to phase)
+#define DIV_FACT  560         // multiplier, for menu voltage out calculation - found by experiment (needs updating)
 int amplitude_div=DIV_CONST;
 int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit amplifier power dissipation
 
@@ -402,6 +415,12 @@ int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit
 
 
 //-------------------------------------------------------------------------------------------
+unsigned char reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
 
 void build_sintable(void)
 {
@@ -531,8 +550,6 @@ const float ratio0 = (32.2727272727/1.00979); // medium to coarse
 const float ratio2 = (1041.5289256198/1.00979/1.00333); //ratio1*30; // fine to coarse
 const float ratio1 = (ratio2/ratio0);//30;        // fine to medium
 
-#define offset_coarse 0  // range on coarse is -90 to +90, so offset is +90 (to verify)
-
 // convert required absolute film position to resolver angles
 void abs2res(float bump)
 {
@@ -542,13 +559,13 @@ void abs2res(float bump)
   if(absolute < 0) absolute = 0;
 
   transport.resolvers[2].angle =      (absolute / ratio2) + coarse_offset;
-  coarse = transport.resolvers[2].angle =      (absolute / ratio2);
+  coarse =      (absolute / ratio2);
 
   transport.resolvers[1].angle = fmod((absolute / ratio1) + medium_offset, 360);
   medium = fmod((absolute / ratio1), 360);
   
   transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
-  fine   = fmod((absolute)          + fine_offset,   360);
+  fine   = fmod((absolute),          360);
 
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
@@ -568,7 +585,7 @@ void abs2res(float bump)
 }
 
 
-void fine2res(long bump)
+void fine2res(float bump)
 {
   float target;
 //  fine = fmod(fine+bump,360);
@@ -579,11 +596,11 @@ void fine2res(long bump)
 //  transport.resolvers[0].amplitude[1] = cos(target) * 500;
   abs2res(bump);
 #else
-  transport.resolvers[2].amplitude[0] = -sin(target) * 500;
+?  transport.resolvers[2].amplitude[0] = -sin(target) * 500;
 #endif
 }
 
-void medium2res(long bump)
+void medium2res(float bump)
 {
   float target;
 //  medium = fmod(medium+bump,360);
@@ -595,11 +612,11 @@ void medium2res(long bump)
 //  transport.resolvers[1].amplitude[1] = cos(target) * 500;
   abs2res(ratio1*bump);
 #else
-  transport.resolvers[2].amplitude[1] = -sin(target) * 500;
+?  transport.resolvers[2].amplitude[1] = -sin(target) * 500;
 #endif
 }
 
-void coarse2res(long bump)
+void coarse2res(float bump)
 {
   float target;
 //  coarse = fmod(coarse+bump,360);
@@ -611,7 +628,7 @@ void coarse2res(long bump)
   abs2res(ratio2*bump);
 }
 
-void heading2res(long bump)
+void heading2res(float bump)
 {
   float target;
   heading = fmod(heading+bump,360);
@@ -631,7 +648,7 @@ void heading2res(long bump)
 #endif  
 }
 
-void ntos2res(long bump)
+void ntos2res(float bump)
 {
   float target;
   ntos = fmod(ntos+bump,360);
@@ -749,7 +766,11 @@ void setup()
 {
 
   display.init();           // Init ST7789 240x240
+#ifndef USING_PICO_EXPLORER_BOARD
   display.setRotation(0);
+#else
+  display.setRotation(3);
+#endif
   display.fillScreen(TFT_BLACK);
   display.setTextColor(TFT_GREEN);
   display.setTextSize(3);
@@ -775,6 +796,22 @@ void setup()
   pinMode(ButtonA, INPUT_PULLUP);
   pinMode(ButtonB, INPUT_PULLUP);
   pinMode(ButtonX, INPUT_PULLUP);
+#endif
+
+#ifdef USING_MCP32017
+  Wire1.setSDA(MCP_SDA);
+  Wire1.setSCL(MCP_SCL);
+//  Wire.setSDA(20);
+//  Wire.setSCL(21);
+  Wire1.begin();
+  if(!myMCP.Init()){
+    Serial.println("Not connected!");
+    while(1){} 
+  }
+  Serial.println("Connected");
+
+  myMCP.setPortMode(0xff, A);    
+  myMCP.setPortMode(0x00, B);
 #endif
 
 #if 0
@@ -928,9 +965,57 @@ void loop()
   static int old_absolute=0;
 
   static int pos = 0;
+  int bits;
 
   encoder.tick(); // used by menu functions
   LCDML.loop();   // lcd and serial user interface
+
+#ifdef USING_MCP32017
+  bits=myMCP.getPort(B);
+//  Serial.print("bits=");
+//  Serial.println(bits);
+  bits ^= 0xff;
+  bits=reverse(bits);
+  myMCP.setPort(bits,A);
+#endif
+
+
+  encoder2.tick();
+
+  int newPos = encoder2.getPosition();
+
+/*  
+  if(newPos < 0)
+  {
+    encoder2.setPosition(0);
+    newPos = 0;
+  }
+*/
+//  if (pos != newPos) 
+  if (newPos != 0) 
+  {
+    #if 0
+    Serial.print("pos:");
+    Serial.print(newPos);
+    Serial.print(" dir:");
+    Serial.println((int)(encoder2.getDirection()));
+    #endif
+    pos = newPos;
+    encoder2.setPosition(0);
+    if(!automatic)
+    {
+      abs2res(autostep * pos);
+    }
+    char buf[20];
+    sprintf (buf, "Absolute %6.1f", absolute);
+    //display.fillScreen(_LCDML_BACKGROUND_COLOR);
+    display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
+    display.setCursor(20, _LCDML_FONT_H * (2));
+    display.println(buf);
+
+  } // if
+
+
 
   if(automatic)   // advance absolute film position
   {

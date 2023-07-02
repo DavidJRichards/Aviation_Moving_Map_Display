@@ -495,7 +495,7 @@ void mDyn_stepsize(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "Step Size: %.0f", autostep);
+  sprintf (buf, "Step Size: %3.2f", autostep);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -632,7 +632,7 @@ void mDyn_heading(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "Heading: %.1f", heading);
+  sprintf (buf, "Heading: %3.2f", heading);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -702,7 +702,7 @@ void mDyn_ntos(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "N to S:  %.1f", ntos);
+  sprintf (buf, "N to S:  %3.2f", ntos);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -770,7 +770,7 @@ void mDyn_fine(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "Fine:    %.2f", fine);
+  sprintf (buf, "Fine:    %3.2f", fine);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -838,7 +838,7 @@ void mDyn_medium(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "Medium:  %.2f", medium);
+  sprintf (buf, "Medium:  %3.2f", medium);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -905,7 +905,7 @@ void mDyn_coarse(uint8_t line)
   }
 
   char buf[20];
-  sprintf (buf, "Coarse:  %.2f", coarse);
+  sprintf (buf, "Coarse:  %3.2f", coarse);
 
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
@@ -974,7 +974,7 @@ void mDyn_absolute(uint8_t line)
 
 
   char buf[20];
-  sprintf (buf, "Absolute %.1f", absolute);
+  sprintf (buf, "Absolute %6.1f", absolute);
   display.setCursor(20, _LCDML_FONT_H * (line));
   display.println(buf);
 }
