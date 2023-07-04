@@ -31,6 +31,10 @@ Fitted to Harrier aircraft ZD401:
 
 [Military chasrt symbols Gen 2.3](https://www.aidu.mod.uk/aip/pdf/gen/GEN-2-3.pdf)
 
+[Latitude & Longitude definitions](https://maptools.com/tutorials/lat_lon/definitions)
+
+[Lat / Long distance calculator](https://www.nhc.noaa.gov/gccalc.shtml)
+
 #### More information on similar device:
 
 Information supplied by Erik Baigar, Munich.

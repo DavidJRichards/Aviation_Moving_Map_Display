@@ -451,6 +451,9 @@ void mFunc_resetAbs(uint8_t param)
 
     // Jump to main screen
     absolute = 0;
+    coarse_offset = DEFAULT_COARSE_OFFSET;
+    medium_offset = DEFAULT_MEDIUM_OFFSET;
+    fine_offset = DEFAULT_FINE_OFFSET;
     abs2res(absolute);
   }
   LCDML.FUNC_goBackToMenu();

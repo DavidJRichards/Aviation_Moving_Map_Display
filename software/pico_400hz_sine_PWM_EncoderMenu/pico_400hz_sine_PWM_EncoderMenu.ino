@@ -153,50 +153,49 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // LCDML_add(id, prev_layer, new_num, lang_char_array, callback_function)
   // LCDMenuLib_addAdvanced(id, prev_layer, new_num, condition,   lang_char_array, callback_function, parameter (0-255), menu function type  )
 
-  LCDML_addAdvanced ( 0 , LCDML_0   ,       1  ,  NULL,         ""               , mDyn_heading,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 1 , LCDML_0   ,       2  ,  NULL,         ""               , mDyn_ntos,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 2 , LCDML_0    ,      3  ,  NULL,         ""               , mDyn_absolute,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 3 , LCDML_0   ,       4  ,  NULL,         ""               , mDyn_fine,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 4 , LCDML_0   ,       5  ,  NULL,         ""               , mDyn_medium,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced ( 5 , LCDML_0   ,       6  ,  NULL,         ""               , mDyn_coarse,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 0 , LCDML_0        , 1  , NULL,          "Stepsize"       , mFunc_para,        0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced ( 1 , LCDML_0_1      , 1  , NULL,          ""               , mDyn_stepsize,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 2 , LCDML_0_1      , 2  , NULL,          "Stepsize 0.2"   , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced ( 3 , LCDML_0_1      , 3  , NULL,          "Stepsize 2"     , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced ( 4 , LCDML_0_1      , 4  , NULL,          "Stepsize 30"    , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced ( 5 , LCDML_0_1      , 5  , NULL,          "Stepsize 900"   , mFunc_para,       54,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced ( 6 , LCDML_0_1      , 6  , NULL,          "Stepsize 27000" , mFunc_para,       55,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         ( 7 , LCDML_0_1      , 7  , "Back"        , mFunc_back);
 
-  LCDML_add         ( 6 , LCDML_0        ,  7  , "Show Settings"                 , mFunc_showSettings); 
-  LCDML_add         ( 7 , LCDML_0        ,  8  , "Toggle Automatic"              , mFunc_toggleAuto);                                                       // NULL = no menu function
-  LCDML_add         ( 8 , LCDML_0        ,  9  , "Reset Absolute"                , mFunc_resetAbs);                                                         // NULL = no menu function
+  LCDML_addAdvanced ( 8 , LCDML_0   ,       2  ,  NULL,         ""               , mDyn_heading,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced ( 9 , LCDML_0   ,       3  ,  NULL,         ""               , mDyn_ntos,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (10 , LCDML_0    ,      4  ,  NULL,         ""               , mDyn_absolute,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (11 , LCDML_0   ,       5  ,  NULL,         ""               , mDyn_fine,        0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (12 , LCDML_0   ,       6  ,  NULL,         ""               , mDyn_medium,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (13 , LCDML_0   ,       7  ,  NULL,         ""               , mDyn_coarse,      0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (14 , LCDML_0        , 35 , NULL,          ""               , mDyn_C_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Coarse
+  LCDML_addAdvanced (15 , LCDML_0         , 36 , NULL,          ""               , mDyn_M_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Medium
+  LCDML_addAdvanced (16 , LCDML_0         , 37 , NULL,          ""               , mDyn_F_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Fine
+  LCDML_add         (17 , LCDML_0        ,  8  , "Reset Absolute"                , mFunc_resetAbs);                                                         // NULL = no menu function
 
+  LCDML_add         (18 , LCDML_0        ,  9  , "Show Settings"                 , mFunc_showSettings); 
+  LCDML_add         (19 , LCDML_0        , 10  , "Toggle Automatic"              , mFunc_toggleAuto);                                                       // NULL = no menu function
 
-  LCDML_addAdvanced ( 9 , LCDML_0         ,10  , NULL,          "Stepsize"       , mFunc_para,        0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (10 , LCDML_0_10      , 1  , NULL,          ""               , mDyn_stepsize,     0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (11 , LCDML_0_10      , 2  , NULL,          "Stepsize 0.2"   , mFunc_para,       51,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (12 , LCDML_0_10      , 3  , NULL,          "Stepsize 2"     , mFunc_para,       52,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (13 , LCDML_0_10      , 4  , NULL,          "Stepsize 30"    , mFunc_para,       53,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (14 , LCDML_0_10      , 5  , NULL,          "Stepsize 900"   , mFunc_para,       54,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (15 , LCDML_0_10      , 6  , NULL,          "Stepsize 27000" , mFunc_para,       55,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (16 , LCDML_0_10      , 7  , "Back"        , mFunc_back);
+  LCDML_addAdvanced (20 , LCDML_0         ,21  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (21 , LCDML_0_21     , 1  , NULL,          ""               , mDyn_autodelay,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (22 , LCDML_0_21      , 2  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (23 , LCDML_0_21      , 3  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (24 , LCDML_0_21      , 4  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_addAdvanced (25 , LCDML_0_21      , 5  , NULL,          "AutoDelay 1000" , mFunc_para,      64,            _LCDML_TYPE_default);                    // NULL = no menu function
+  LCDML_add         (26 , LCDML_0_21      , 6  , "Back"        , mFunc_back); 
 
-  LCDML_addAdvanced (17 , LCDML_0         ,18  , NULL,          "AutoDelay"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (18 , LCDML_0_18      , 1  , NULL,          ""               , mDyn_autodelay,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (19 , LCDML_0_18      , 2  , NULL,          "AutoDelay 1"    , mFunc_para,      61,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (20 , LCDML_0_18      , 3  , NULL,          "AutoDelay 10"   , mFunc_para,      62,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (21 , LCDML_0_18      , 4  , NULL,          "AutoDelay 100"  , mFunc_para,      63,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (22 , LCDML_0_18      , 5  , NULL,          "AutoDelay 1000" , mFunc_para,      64,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_add         (23 , LCDML_0_18      , 6  , "Back"        , mFunc_back); 
-
-  LCDML_addAdvanced (24 , LCDML_0   ,      13  ,  NULL,         ""               , mDyn_amplitude,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
-  LCDML_addAdvanced (25 , LCDML_0   ,      14  ,  NULL,         ""               , mDyn_amplitude2,  0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (27 , LCDML_0   ,      13  ,  NULL,         ""               , mDyn_amplitude,   0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (28 , LCDML_0   ,      14  ,  NULL,         ""               , mDyn_amplitude2,  0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
 
 //  LCDML_addAdvanced (26 , LCDML_0         ,27  , COND_hide,          "Ref Phase"      , mFunc_para,       0,            _LCDML_TYPE_default);                    // NULL = no menu function
-  LCDML_addAdvanced (26 , LCDML_0        , 28  , NULL,          ""               , mDyn_refPhase,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
+  LCDML_addAdvanced (29 , LCDML_0        , 28  , NULL,          ""               , mDyn_refPhase,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
 //  LCDML_addAdvanced (28 , LCDML_0_27      , 2  , NULL,          "Ref Phase 0"    , mFunc_para,      71,            _LCDML_TYPE_default);                    // NULL = no menu function
 //  LCDML_addAdvanced (29 , LCDML_0_27      , 3  , NULL,          "Ref Phase 90"   , mFunc_para,      72,            _LCDML_TYPE_default);                    // NULL = no menu function
 //  LCDML_addAdvanced (30 , LCDML_0_27      , 4  , NULL,          "Ref Phase 180"  , mFunc_para,      73,            _LCDML_TYPE_default);                    // NULL = no menu function
 //  LCDML_addAdvanced (31 , LCDML_0_27      , 5  , NULL,          "Ref Phase 270"  , mFunc_para,      74,            _LCDML_TYPE_default);                    // NULL = no menu function
 //  LCDML_add         (32 , LCDML_0_27      , 6  , "Back"        , mFunc_back); 
 
-  LCDML_addAdvanced (27 , LCDML_0         , 35 , NULL,          ""               , mDyn_C_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Coarse
-  LCDML_addAdvanced (28 , LCDML_0         , 36 , NULL,          ""               , mDyn_M_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Medium
-  LCDML_addAdvanced (29 , LCDML_0         , 37 , NULL,          ""               , mDyn_F_Offset,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function  Fine
-  // Example for dynamic content
+   // Example for dynamic content
   // 1. set the string to ""
   // 2. use type  _LCDML_TYPE_dynParam   instead of    _LCDML_TYPE_default
   // this function type can not be used in combination with different parameters
@@ -211,11 +210,12 @@ enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
   // Example function for event handling (only serial output in this example)  
 //  LCDML_add         (23 ,      LCDML_0         , 8  , "Event Handling"                 , mFunc_exampleEventHandling);  // this menu function can be found on "LCDML_display_menuFunction" tab
 
+  LCDML_addAdvanced (31 ,      LCDML_0        , 31  , NULL,          ""               , mDyn_Scene,    0,            _LCDML_TYPE_dynParam);                   // NULL = no menu function
   // ***TIP*** Try to update _LCDML_DISP_cnt when you add a menu element.
 
   // menu element count - last element id
   // this value must be the same as the last menu element
-  #define _LCDML_DISP_cnt    30
+  #define _LCDML_DISP_cnt    31
 
   // create menu
   LCDML_createMenu(_LCDML_DISP_cnt);
@@ -363,6 +363,24 @@ struct transport_ transport = {
   10,                                                                          // autodelay
 };
 
+struct scene_ {
+  char name[32];
+  float absolute;
+  float ntos;
+  float fudge;
+};
+
+struct scene_ scenes[] = {
+  "Rillington",   179537.2, 48, 106,
+  "Topcliffe",    179601.2, 48, 106,
+  "Scarborough",   80362.3,  0, 100,
+  "York",         183266.9,  0,  95,
+  "Ryedale 1",    172310.9, 40, 331,
+  "Ryedale 2",    184805.0, 20,  95,
+  "Ryedale 3",     80402.3, 10, 100,
+  "Sheffield",    172282.6,-65, 194,
+  "Heathrow",     161931.3, 85, 137,
+};
 
 char dashLine[] = "=====================================================================";
 
@@ -374,21 +392,26 @@ volatile int frequency_save;
 
 // menu variables TODO use transport structure variables
 float autostep =  1;
-//float ntos_autostep =  1;
-#define ntos_autostep autostep
+float ntos_autostep =  5;
+//#define ntos_autostep autostep
 bool  automatic = false;
 int   autodelay = 10;
-float absolute =  514.6;
+float absolute =  3481.2;
 float fine = 0.0;
 float medium = 0.0;
 float coarse = 0.0;
 float heading = 0.0;
-float ntos = 20.0;
-int ntos_offset = 90;
+float ntos = 80.0;
+float ntos_offset = 91.5;
 
-int coarse_offset = -90;         // film at left hand end of roll, abs 0
-int medium_offset = 65;         //
-int fine_offset = 0;
+#define DEFAULT_COARSE_OFFSET -90
+#define DEFAULT_MEDIUM_OFFSET 65
+#define DEFAULT_FINE_OFFSET 0
+
+int coarse_offset = DEFAULT_COARSE_OFFSET;         // film at left hand end of roll, abs 0
+int medium_offset = DEFAULT_MEDIUM_OFFSET;         //
+int fine_offset = DEFAULT_FINE_OFFSET;
+
 #define AMPLITUDE_FS 15.16 //16.33    // volts rms ful scale output, measured
 #define DIV_CONST 608         // divisor for 13 volt resolver outputs       832         // divisor for desired 11 volt ouput
 #define REF_CONST 608         // divisor for 13 volt reference output (26 v phase to phase)
@@ -421,6 +444,28 @@ unsigned char reverse(unsigned char b) {
    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
    return b;
 }
+
+int current_scene = 0;
+void scene_update(int bump){
+  current_scene += bump;
+
+  if(current_scene < 0)
+    current_scene = NUMELE(scenes)-1;  
+
+  if(current_scene >= NUMELE(scenes))
+    current_scene = 0;
+
+  absolute = scenes[current_scene].absolute;
+  ntos = scenes[current_scene].ntos;
+  //scale
+  medium_offset = scenes[current_scene].fudge;
+
+  abs2res(0);
+  ntos2res(0);
+  heading2res(0);
+}
+
+
 
 void build_sintable(void)
 {
