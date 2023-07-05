@@ -13,13 +13,11 @@ Fitted to Harrier aircraft ZD401:
 
 ## Photos
 
-[module images](./images/README.md)
+Photos of this module [images](./images/README.md)
 
-[harrier photos](https://www.jetphotos.com/registration/ZD401)
+harrier photos [jetphotos](https://www.jetphotos.com/registration/ZD401) [abpic](https://abpic.co.uk/pictures/registration/ZD401)
 
-[harrier photos](https://abpic.co.uk/pictures/registration/ZD401)
-
-[Harrier cockpit](https://4.bp.blogspot.com/_fhZZ63PRjhQ/TUsCl6HRGVI/AAAAAAAACPw/2A3Wuko7wsM/s1600/harrier4.jpg)
+Inside the harrier [cockpit](https://4.bp.blogspot.com/_fhZZ63PRjhQ/TUsCl6HRGVI/AAAAAAAACPw/2A3Wuko7wsM/s1600/harrier4.jpg)
 
 ![overview](./images/overview.jpg)
 
@@ -429,11 +427,58 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 
 ## Circuit boards
 
+<table><tr>
+<tr>
+
+<td valign="bottom">
+<img src="./images/No5_AMPLIFIER_ERROR_YT.jpg" width="200"><br>
+No5_AMPLIFIER_ERROR_YT.jpg
+</td>
+
+<td valign="bottom">
+<img src="./images/No6_DRIVER_LAMP_CHANGER.jpg" width="200"><br>
+No6_DRIVER_LAMP_CHANGER.jpg
+</td>
+
+<td valign="bottom">
+<img src="./images/No7_AMPLIFIER_ERROR_X.jpg" width="200"><br>
+No7_AMPLIFIER_ERROR_X.jpg
+</td>
+
+<td valign="bottom">
+<img src="./images/No8_AMPLIFIER_ELECTRONIC_CONTROL.jpg" width="200"><br>
+No8_AMP._ELECTRONIC_CONTROL.jpg
+</td>
+
+<td valign="bottom">
+<img src="./images/No9_AMPLIFIER_EC_OUTPUT.jpg" width="200"><br>
+No9_AMPLIFIER_EC_OUTPUT.jpg
+</td>
+
+</tr>
+<tr>
+
+<td valign="bottom">
+<img src="./images/ScreenModule_Realy_Board.jpg" width="200"><br>
+Screen Realy_Board.jpg
+</td>
+
+<td valign="bottom">
+<img src="./images/ScreenModule_Rectifier_Board.jpg" width="200"><br>
+Screen Rectifier_Board.jpg
+</td>
+
+</tr>
+</table>
+
+
+
 [boards photo](https://cdn.rochesteravionicarchives.co.uk/img/catalog/C1774_%28pcbs_small%29_.jpg?w=1500&fit=max)
 
-<br>
 
 ### Screen module circuit boards
+
+* Note: Boards 10, 11, 12 not fitted
 
 |No|Name|Position|
 |--|----|--------|
@@ -442,10 +487,11 @@ pin#22 has 0 to -10v PWM like signal which is proportional to lamp brightness
 |7|AMPLIFIER, ERROR X|Top|
 |8|AMPLIFIER, ELECTRONIC CONTROL|Top|
 |9|AMPLIFIER, EC (OUTPUT)|Side|
+|n/a|Rectifier Board|Side|
+|n/a|Relay Board|Side|
 
-* Note: Boards 10, 11, 12 not fitted
 
-<br>
+
 
 ### Board connector layout looking into PCB connector
 

@@ -502,15 +502,15 @@ void mFunc_para(uint8_t param)
         break;
 
       case 53:
-        autostep = ratio2;  //30
+        autostep = ratio1;  // ~32
         break;
 
       case 54:
-        autostep = ratio1; // 900
+        autostep = ratio2; // ~ 1024
         break;
 
       case 55:
-        autostep = 27000;
+        autostep = 32768;
         break;
 
       case 61:

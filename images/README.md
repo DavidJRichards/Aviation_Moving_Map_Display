@@ -20,13 +20,13 @@ Amplifier-ERROR-X.png
 IMG_20230517_101057.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./IMG_20230517_101934.jpg" width="200"><br>
 IMG_20230517_101934.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./IMG_20230517_102222.jpg" width="200"><br>
 IMG_20230517_102222.jpg
@@ -42,8 +42,6 @@ IMG_20230517_103042.jpg
 IMG_20230517_103052.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./IMG_20230517_103124.jpg" width="200"><br>
 IMG_20230517_103124.jpg
@@ -54,6 +52,8 @@ IMG_20230517_103124.jpg
 IMG_20230517_103225.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./IMG_20230517_110333.jpg" width="200"><br>
 IMG_20230517_110333.jpg
@@ -62,13 +62,6 @@ IMG_20230517_110333.jpg
 <td valign="bottom">
 <img src="./IMG_20230517_113058.jpg" width="200"><br>
 IMG_20230517_113058.jpg
-</td>
-
-</tr>
-<tr>
-<td valign="bottom">
-<img src="./IMG_20230517_113410.jpg" width="200"><br>
-IMG_20230517_113410.jpg
 </td>
 
 <td valign="bottom">
@@ -89,11 +82,6 @@ IMG_20230517_142305.jpg
 </tr>
 <tr>
 <td valign="bottom">
-<img src="./IMG_20230517_142323.jpg" width="200"><br>
-IMG_20230517_142323.jpg
-</td>
-
-<td valign="bottom">
 <img src="./IMG_20230517_142336.jpg" width="200"><br>
 IMG_20230517_142336.jpg
 </td>
@@ -108,8 +96,6 @@ IMG_20230517_214738.jpg
 IMG_20230518_084245.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./IMG_20230518_084257.jpg" width="200"><br>
 IMG_20230518_084257.jpg
@@ -120,6 +106,8 @@ IMG_20230518_084257.jpg
 IMG_20230518_084312.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./IMG_20230518_084331.jpg" width="200"><br>
 IMG_20230518_084331.jpg
@@ -130,13 +118,50 @@ IMG_20230518_084331.jpg
 IMG_20230518_084442.jpg
 </td>
 
+<td valign="bottom">
+<img src="./IMG_20230519_142747.jpg" width="200"><br>
+IMG_20230519_142747.jpg
+</td>
+
+<td valign="bottom">
+<img src="./IMG_20230519_161724.jpg" width="200"><br>
+IMG_20230519_161724.jpg
+</td>
+
+<td valign="bottom">
+<img src="./IMG_20230519_162350.jpg" width="200"><br>
+IMG_20230519_162350.jpg
+</td>
+
 </tr>
 <tr>
+<td valign="bottom">
+<img src="./IMG_20230519_162458.jpg" width="200"><br>
+IMG_20230519_162458.jpg
+</td>
+
+<td valign="bottom">
+<img src="./IMG_20230519_181945.jpg" width="200"><br>
+IMG_20230519_181945.jpg
+</td>
+
+<td valign="bottom">
+<img src="./IMG_20230703_120306-COLLAGE.jpg" width="200"><br>
+IMG_20230703_120306-COLLAGE.jpg
+</td>
+
+<td valign="bottom">
+<img src="./IMG_20230705_142108.jpg" width="200"><br>
+IMG_20230705_142108.jpg
+</td>
+
 <td valign="bottom">
 <img src="./LCD-Menu.png" width="200"><br>
 LCD-Menu.png
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./LCD_status.jpg" width="200"><br>
 LCD_status.jpg
@@ -152,11 +177,36 @@ LCD_status2.jpg
 Map-Ryedale.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./Map_Newport.jpg" width="200"><br>
 Map_Newport.jpg
+</td>
+
+<td valign="bottom">
+<img src="./No5_AMPLIFIER_ERROR_YT.jpg" width="200"><br>
+No5_AMPLIFIER_ERROR_YT.jpg
+</td>
+
+</tr>
+<tr>
+<td valign="bottom">
+<img src="./No6_DRIVER_LAMP_CHANGER.jpg" width="200"><br>
+No6_DRIVER_LAMP_CHANGER.jpg
+</td>
+
+<td valign="bottom">
+<img src="./No7_AMPLIFIER_ERROR_X.jpg" width="200"><br>
+No7_AMPLIFIER_ERROR_X.jpg
+</td>
+
+<td valign="bottom">
+<img src="./No8_AMPLIFIER_ELECTRONIC_CONTROL.jpg" width="200"><br>
+No8_AMPLIFIER_ELECTRONIC_CONTROL.jpg
+</td>
+
+<td valign="bottom">
+<img src="./No9_AMPLIFIER_EC_OUTPUT.jpg" width="200"><br>
+No9_AMPLIFIER_EC_OUTPUT.jpg
 </td>
 
 <td valign="bottom">
@@ -164,6 +214,8 @@ Map_Newport.jpg
 Output-filter-12-channel-PWM.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./ProjectLogo.jpg" width="200"><br>
 ProjectLogo.jpg
@@ -174,13 +226,23 @@ ProjectLogo.jpg
 QA_1003_Byers_zero-crossing-rev.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./RC-Filter.png" width="200"><br>
 RC-Filter.png
 </td>
 
+<td valign="bottom">
+<img src="./ScreenModule_Realy_Board.jpg" width="200"><br>
+ScreenModule_Realy_Board.jpg
+</td>
+
+<td valign="bottom">
+<img src="./ScreenModule_Rectifier_Board.jpg" width="200"><br>
+ScreenModule_Rectifier_Board.jpg
+</td>
+
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./amplifier-gain-adjusted.jpg" width="200"><br>
 amplifier-gain-adjusted.jpg
@@ -196,8 +258,6 @@ amplifier-resistor-change.jpg
 amplifier.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./breadboard.jpg" width="200"><br>
 breadboard.jpg
@@ -208,6 +268,8 @@ breadboard.jpg
 breadboard2.jpg
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.jpg" width="200"><br>
 circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.jpg
@@ -218,8 +280,6 @@ circuit-for-mains-synchronization-has-two-separate-outputs-for-each-half-period.
 connector.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./improved-opto-detector.png" width="200"><br>
 improved-opto-detector.png
@@ -235,13 +295,13 @@ media-1180431-a-circuit-for-mains-synchronization-has-two-separate-outputs-for-e
 opto-detector.png
 </td>
 
+</tr>
+<tr>
 <td valign="bottom">
 <img src="./oscilloscope.jpg" width="200"><br>
 oscilloscope.jpg
 </td>
 
-</tr>
-<tr>
 <td valign="bottom">
 <img src="./overview.jpg" width="200"><br>
 overview.jpg
