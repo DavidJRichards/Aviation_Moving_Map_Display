@@ -51,8 +51,42 @@
 #include "RPi_Pico_TimerInterrupt.h" // pwm duty cycle change timer 
 #include "RP2040_PWM.h"      // to define PWM channels
 #include <math.h>            // use sin and cos functions in main loop only
-//#include <FreeRTOS.h>
-//#include <semphr.h>
+
+#include <FreeRTOS.h>
+#include <semphr.h>
+#define _USING_TWO_CORES
+
+//
+// Locking code
+//
+//SemaphoreHandle_t interruptSemaphore;
+//SemaphoreHandle_t mutex_v; 
+
+/*
+#if 0
+// Frequency measured in kHz
+float measure_frequency(uint gpio) {
+    // Only the PWM B pins can be used as inputs.
+    assert(pwm_gpio_to_channel(gpio) == PWM_CHAN_B);
+    uint slice_num = pwm_gpio_to_slice_num(gpio);
+
+    // Count once for every 100 cycles the PWM B input is high
+    pwm_config cfg = pwm_get_default_config();
+    pwm_config_set_clkdiv_mode(&cfg, PWM_DIV_B_RISING);
+    pwm_config_set_clkdiv(&cfg, 1.f); //set by default, increment count for each rising edge
+    pwm_init(slice_num, &cfg, false);  //false means don't start pwm
+    gpio_set_function(gpio, GPIO_FUNC_PWM);
+    
+    pwm_set_enabled(slice_num, true);
+    sleep_ms(10);
+    pwm_set_enabled(slice_num, false);
+    
+    uint16_t counter = (uint16_t) pwm_get_counter(slice_num);
+    float freq =   counter / 10.f;
+    return freq;
+}
+#endif
+*/
 
 #define _USING_MCP32017
 
@@ -297,7 +331,7 @@ float PWM_dutyCycle = 50.0f;
 // 1E6Hz  / 400Hz / (20) = . uS timer interval
 // 125 = 400.0 Hz
 
-#define NUM_SINE_ELEMENTS 100 //36        // steps per cycle of 400Hz wave
+#define NUM_SINE_ELEMENTS 36 //100 //36        // steps per cycle of 400Hz wave
 // choose 396 to select lower of two possible frequencies, 400 selects 402
 #define SINEWAVE_FREQUENCY_HZ 400   // target frequency
 #define SYNC_OFFSET_COUNT 6         // sin table index to use when sync pulse detected (ref phase)
@@ -390,13 +424,13 @@ struct scene_ scenes[] = {
 
 char dashLine[] = "=====================================================================";
 
-#define USING_TWO_CORES
-
 bool core0ready = false;
 
 // index into 400Hz sine table for PWM frequency generation
 volatile int step_index = 0; 
 volatile int frequency_save;
+volatile word usperiod;
+
 
 // menu variables TODO use transport structure variables
 float autostep =  1;
@@ -446,6 +480,16 @@ int amplitude_ref=REF_CONST;  // default reference amplitude is just 8v to limit
 
 
 //-------------------------------------------------------------------------------------------
+//https://dsp.stackexchange.com/questions/20333/how-to-implement-a-moving-average-in-c-without-a-buffer
+#define COEF 32
+uint32_t filter(uint32_t raw)
+{
+    static uint64_t accum = 0;
+    accum = accum - accum / COEF + raw;
+    return accum/COEF;
+}
+
+// https://stackoverflow.com/questions/2602823/in-c-c-whats-the-simplest-way-to-reverse-the-order-of-bits-in-a-byte
 unsigned char reverse(unsigned char b) {
    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
@@ -472,8 +516,6 @@ void scene_update(int bump){
   ntos2res(0);
   heading2res(0);
 }
-
-
 
 void build_sintable(void)
 {
@@ -508,7 +550,6 @@ void build_sintable(void)
 #endif
 }
 
-
 // PWM duty change used in stepping sine values of 400 Hz waveforms
 bool TimerHandler0(struct repeating_timer *t)
 { 
@@ -517,11 +558,6 @@ bool TimerHandler0(struct repeating_timer *t)
   int16_t int_sine_step_value;
   static int frequency_count = 0;
   uint16_t dc_levels[NUM_OF_PINS];
-
-  if(step_index >= sine_table.num_elements)
-  {
-    step_index = 0;
-  }
 
 #define MID_POINT_INT 500
   int_sine_step_value = ( sine_table.levels[step_index] ); 
@@ -548,25 +584,6 @@ bool TimerHandler0(struct repeating_timer *t)
   dc_levels[10] = MID_POINT_INT +   transport.resolvers[5].amplitude[0] * int_sine_step_value / amplitude_div;
   dc_levels[11] = MID_POINT_INT +   transport.resolvers[5].amplitude[1] * int_sine_step_value / amplitude_div;  
 
-  if(step_index >= PULSE_OFFSET_COUNT)
-  {
-    if(pulse_sent == false)
-    {
-      digitalWrite(pinOpSync, 0);
-      pulse_sent=true;
-      frequency_save++;
-    }
-  }
-  else
-  {
-    if(pulse_sent == true)
-    {
-      digitalWrite(pinOpSync, 1);    
-      pulse_sent = false;
-    }
-  }
-  step_index++;
-
   PWM_Instance[0]->setPWM_manual_Fast(PWM_Pins[0], dc_levels[0]);
   PWM_Instance[1]->setPWM_manual_Fast(PWM_Pins[1], dc_levels[1]);
   PWM_Instance[2]->setPWM_manual_Fast(PWM_Pins[2], dc_levels[2]);
@@ -580,21 +597,67 @@ bool TimerHandler0(struct repeating_timer *t)
   PWM_Instance[10]->setPWM_manual_Fast(PWM_Pins[10], dc_levels[10]);
   PWM_Instance[11]->setPWM_manual_Fast(PWM_Pins[11], dc_levels[11]);
 
+  //xSemaphoreTake(interruptSemaphore, portMAX_DELAY);
+//xSemaphoreTake(mutex_v, portMAX_DELAY); 
+  {
+    if(step_index >= sine_table.num_elements)
+    {
+      step_index = 0;
+    }
+
+    if(step_index >= PULSE_OFFSET_COUNT)
+    {
+      if(pulse_sent == false)
+      {
+        digitalWrite(pinOpSync, 0);
+        pulse_sent=true;
+#if 1
+  static word ustick, usold;
+  ustick = timer_hw->timelr;
+  usperiod = ustick - usold;
+  usold = ustick;
+#endif
+
+      }
+    }
+    else
+    {
+      if(pulse_sent == true)
+      {
+        digitalWrite(pinOpSync, 1);    
+        pulse_sent = false;
+      }
+    }
+    step_index++;
+  }
+//  xSemaphoreGiveFromISR(interruptSemaphore, NULL);  
+  //xSemaphoreGive(interruptSemaphore);  
+  //xSemaphoreGive(mutex_v); 
+//  xSemaphoreGiveFromISR(mutex_v, NULL); 
   return true;
 }
 
 void ref_phase_update(long bump)
 {
-
   sine_table.sync_offset += bump;  
 }
 
-
 // ISR for frequency sync input
 void syncInput(void) {
-    ITimer0.stopTimer();
-    step_index=sine_table.sync_offset;
-    ITimer0.restartTimer();
+//  static word ustick, usold;
+//  xSemaphoreTake(interruptSemaphore, portMAX_DELAY);
+  ITimer0.stopTimer();
+  step_index=sine_table.sync_offset;
+  ITimer0.restartTimer();
+#if 0
+  static word ustick, usold;
+  ustick = timer_hw->timelr;
+  usperiod = ustick - usold;
+  usold = ustick;
+#endif
+
+//  xSemaphoreGiveFromISR(interruptSemaphore, NULL);
+//  xSemaphoreGive(interruptSemaphore); 
 }
 
 // these constants represent the gearing between the resolvers 
@@ -810,6 +873,7 @@ void displayUpdate(void)
 
   display.print("Auto =     ");
   display.println(automatic);
+
 }
 
 // setup -----------------------------------------------------------------------------------------
@@ -830,6 +894,7 @@ void setup()
 
   Serial.begin(115200);
   while (!Serial && millis() < 5000);
+  //while ( millis() < 5000);
   delay(100);
   Serial.println();
 
@@ -918,6 +983,10 @@ void setup()
     // You can jump to a menu function from anywhere with
     //LCDML.OTHER_jumpToFunc(mFunc_p2); // the parameter is the function name
 
+//  interruptSemaphore = xSemaphoreCreateBinary();
+//  mutex_v = xSemaphoreCreateMutex(); 
+//  dumpTimerHwRegs();
+
   Serial.println("Core0 setup finished");
   core0ready = true;
 #ifndef USING_TWO_CORES
@@ -941,6 +1010,43 @@ void setup()
 
 //  return 0;
 }
+
+#if 0
+/*
+#define SerialUSB Serial
+
+void dumpTimerHwReg (const char *str, unsigned long reg) {
+  SerialUSB.print(str);
+  SerialUSB.print("\t");
+  SerialUSB.print(reg);
+  SerialUSB.print("\t");
+  SerialUSB.print(reg, HEX);
+  SerialUSB.print("\n");
+}
+
+void dumpTimerHwRegs() {
+  SerialUSB.println("-------------------------------");
+  dumpTimerHwReg("timehr", timer_hw->timehr);
+  dumpTimerHwReg("timelr", timer_hw->timelr);
+  dumpTimerHwReg("alarm0", timer_hw->alarm[0]);
+  dumpTimerHwReg("alarm1", timer_hw->alarm[1]);
+  dumpTimerHwReg("alarm2", timer_hw->alarm[2]);
+  dumpTimerHwReg("alarm3", timer_hw->alarm[3]);
+  dumpTimerHwReg("armed", timer_hw->armed);
+  dumpTimerHwReg("timerawh", timer_hw->timerawh);
+  dumpTimerHwReg("timerawl", timer_hw->timerawl);
+  dumpTimerHwReg("dbgpause", timer_hw->dbgpause);
+  dumpTimerHwReg("pause", timer_hw->pause);
+  dumpTimerHwReg("intr", timer_hw->intr);
+  dumpTimerHwReg("inte", timer_hw->inte);
+  dumpTimerHwReg("intf", timer_hw->intf);
+  dumpTimerHwReg("ints", timer_hw->ints);
+  SerialUSB.println("");  
+}
+*/
+#endif
+
+
 #ifndef USING_TWO_CORES
 // this is a second setup function called by setup
 #warning "Using single core only"
@@ -949,6 +1055,7 @@ void setup0()
 // this is the real second core setup function
 #warning "Using two cores"
 #warning "Check core useage in serial report"
+
 void setup1()
 #endif
 {
@@ -958,6 +1065,11 @@ void setup1()
     tight_loop_contents();
   }
 
+/*
+    if (mutex_v == NULL) { 
+        Serial.println("Mutex can not be created"); 
+    } 
+*/
   Serial.println(dashLine);
   Serial.print("Core #:");
   Serial.println(get_core_num());
@@ -968,7 +1080,7 @@ void setup1()
   Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
 
- // Interval in microsecs
+ // sine table lookup timer, Interval in microsecs
   if (ITimer0.attachInterruptInterval(sine_table.timer_interval, TimerHandler0))
   {
     Serial.print(F("Starting ITimer0 OK, millis() = ")); Serial.println(millis());
@@ -978,6 +1090,7 @@ void setup1()
     Serial.println(F("Can't set ITimer0. Select another freq. or timer"));
   }
 
+  // sync input interrupt
   attachInterrupt(pinIpTrig, syncInput, RISING);
 
   Serial.print("PWM Actual frequency[7] = ");
@@ -1000,13 +1113,14 @@ void loop()
 {
   static int refresh_time=0;
   static int old_absolute=0;
-
+  static float frequency;
   static int pos = 0;
+  static bool req_abs_display update = false;
   int bits;
 
   encoder.tick(); // used by menu functions
   LCDML.loop();   // lcd and serial user interface
-
+   
 #ifdef USING_MCP32017
   bits=myMCP.getPort(B);
 //  Serial.print("bits=");
@@ -1019,15 +1133,33 @@ void loop()
   encoder2.tick();
   int newPos = encoder2.getPosition();
 
-/*  
-  if(newPos < 0)
-  {
-    encoder2.setPosition(0);
-    newPos = 0;
+  { // perform frequency averaging every 5ms
+    static int del_count=0;
+    int del_value;
+    del_value=millis();
+    if(del_value - del_count > 5)
+    {
+      del_count = del_value;
+      frequency = filter(10000000L / usperiod)/10.0;
+    }
   }
-*/
-//  if (pos != newPos) 
-  if (newPos != 0) 
+
+  { // frequency display update every 250mS
+    static int del_count=0;
+    int del_value;
+    del_value=millis();
+    if(del_value - del_count > 250)
+    {
+      del_count = del_value;
+      char buf[20];
+      sprintf (buf, "Frequency %4.1f", frequency);
+      display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
+      display.setCursor(20, _LCDML_FONT_H * (18));
+      display.println(buf);
+    }
+  }
+
+  if (newPos != 0) // second encoder movement
   {
     #if 0
     Serial.print("pos:");
@@ -1040,14 +1172,8 @@ void loop()
     if(!automatic)
     {
       abs2res(autostep * pos);
+      req_abs_display update = true;
     }
-    char buf[20];
-    sprintf (buf, "Absolute %6.1f", absolute);
-    //display.fillScreen(_LCDML_BACKGROUND_COLOR);
-    display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
-    display.setCursor(20, _LCDML_FONT_H * (2));
-    display.println(buf);
-
   } // if
 
   if(automatic)   // advance absolute film position
@@ -1060,16 +1186,25 @@ void loop()
     {
       del_count=del_value;
       abs2res(autostep);
+      req_abs_display update = true;
       //heading2res(autostep);
       //ntos2res(autostep);
-#if 0
-      Serial.print("freq=");
-      Serial.print(frequency_save*1000/autodelay);
-      Serial.println("Hz");
-      frequency_save=0;
-#endif      
     }
   }
+
+  if(req_abs_display update == true)
+  {
+    // overwrite display menu absolute value
+    char buf[20];
+    sprintf (buf, "Absolute %6.1f", absolute);
+    //display.fillScreen(_LCDML_BACKGROUND_COLOR);
+    display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
+    display.setCursor(20, _LCDML_FONT_H * (3));
+    display.println(buf);
+    req_abs_display update == false;
+  }
+
+
 
 }
 // only ISRs are active on second core,
