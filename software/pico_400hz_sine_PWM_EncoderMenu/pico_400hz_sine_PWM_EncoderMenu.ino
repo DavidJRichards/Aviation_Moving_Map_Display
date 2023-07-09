@@ -87,6 +87,23 @@ float measure_frequency(uint gpio) {
 }
 #endif
 */
+#include <ModbusSerial.h>
+const byte SlaveId = 10;
+const int TxenPin = -1; // -1 disables the feature, change that if you are using an RS485 driver, this pin would be connected to the DE and /RE pins of the driver.
+const unsigned long Baudrate = 115200;
+ModbusSerial mb (Serial, SlaveId, TxenPin);
+
+const int absoluteHreg = 0;
+const int absoluteIreg = 0;
+unsigned int absoluteValue[2] = {0,0};
+
+const int ntosHreg = 2;
+const int ntosIreg = 2;
+unsigned int ntosValue[2] = {0,0};
+
+const int headingHreg = 4;
+const int headingIreg = 4;
+unsigned int headingValue[2] = {0,0};
 
 #define _USING_MCP32017
 
@@ -165,6 +182,15 @@ MCP23017 myMCP = MCP23017(&Wire1, MCP_ADDRESS, RESET_PIN);
 #define NUMELE(array) ( sizeof(array) / sizeof(array[0]) )
 
 enum RESOLVERS {ABSOLUTE=-1,FINE=0,MEDIUM,COARSE,REFERENCE,HEADING,NtoS};
+
+typedef union {
+  float f;
+  uint32_t l;
+  word w[sizeof(float)/sizeof(word)];
+  byte b[sizeof(float)];
+} cracked_float_t;
+
+cracked_float_t cracked_value;
 
 // *********************************************************************
 // Prototypes
@@ -683,6 +709,11 @@ void abs2res(float bump)
   transport.resolvers[0].angle = fmod((absolute)          + fine_offset,   360);
   fine   = fmod((absolute),          360);
 
+  // translate to modbus registers
+  cracked_value.f = absolute;
+  mb.Ireg(absoluteIreg, cracked_value.w[1]);
+  mb.Ireg(absoluteIreg+1, cracked_value.w[0]);
+
 // fine
   target = fmod(transport.resolvers[0].angle, 360) * M_PI/180.0;
   transport.resolvers[0].amplitude[0] = sin(target) * 500;
@@ -749,6 +780,13 @@ void heading2res(float bump)
   float target;
   heading = fmod(heading+bump,360);
   transport.resolvers[4].angle  =   heading;
+
+  // translate to modbus registers
+  cracked_value.f = heading;
+  mb.Ireg(headingIreg, cracked_value.w[1]);
+  mb.Ireg(headingIreg+1, cracked_value.w[0]);
+
+
 #ifndef HEADING_SYNCHRO
   // output to resolver receiver
   target = fmod(transport.resolvers[4].angle, 360) * M_PI/180.0;
@@ -768,7 +806,13 @@ void ntos2res(float bump)
 {
   float target;
   ntos = fmod(ntos+bump,360);
-  transport.resolvers[5].angle = fmod(ntos+bump + ntos_offset,360);
+
+  // translate to modbus registers
+  cracked_value.f = ntos;
+  mb.Ireg(ntosIreg, cracked_value.w[1]);
+  mb.Ireg(ntosIreg+1, cracked_value.w[0]);
+
+  transport.resolvers[5].angle = fmod(ntos + ntos_offset,360);
 #ifndef NTOS_SYNCHRO
   if(ntos<-90)ntos=-90;
   if(ntos>90)ntos=90;
@@ -898,8 +942,28 @@ void setup()
   display.setTextSize(3);
   display.println("Resolver PWM");
 
-  Serial.begin();
+  Serial.begin(Baudrate);
   while ( millis() < 2000);
+  mb.config (Baudrate);
+  mb.setAdditionalServerData ("Ferranti_PMD"); // for Report Server ID function (0x11)
+
+  mb.addHreg (absoluteHreg, absoluteValue[0]);
+  mb.addHreg (absoluteHreg+1, absoluteValue[1]);
+  mb.addIreg (absoluteIreg, absoluteValue[0]);
+  mb.addIreg (absoluteIreg+1, absoluteValue[1]);
+
+  mb.addHreg (ntosHreg, ntosValue[0]);
+  mb.addHreg (ntosHreg+1, ntosValue[1]);
+  mb.addIreg (ntosIreg, ntosValue[0]);
+  mb.addIreg (ntosIreg+1, ntosValue[1]);
+
+  mb.addHreg (headingHreg, headingValue[0]);
+  mb.addHreg (headingHreg+1, headingValue[1]);
+  mb.addIreg (headingIreg, headingValue[0]);
+  mb.addIreg (headingIreg+1, headingValue[1]);
+
+  
+//  mb.setHregBounds (absoluteHreg, 0, 65000); // Set ServoHreg register bounds
 
   Serial.println();
   Serial.println(dashLine);
@@ -1122,6 +1186,7 @@ void loop()
 
   encoder.tick(); // used by menu functions
   LCDML.loop();   // lcd and serial user interface
+  mb.task();      // process modbus on USB serial
    
 #ifdef USING_MCP32017
   bits=myMCP.getPort(B);
@@ -1195,6 +1260,42 @@ void loop()
     }
   }
 
+  if( (absoluteValue[0]!=mb.hreg(absoluteHreg)) && (absoluteValue[1]!=mb.hreg(absoluteHreg+1)) )
+  {
+    absoluteValue[0]=mb.hreg(absoluteHreg);
+    absoluteValue[1]=mb.hreg(absoluteHreg+1);
+
+    cracked_value.w[1]=absoluteValue[0];
+    cracked_value.w[0]=absoluteValue[1];
+    absolute = cracked_value.f;
+    abs2res(0);
+    req_abs_display_update = true;
+  }
+
+  if( (ntosValue[0]!=mb.hreg(ntosHreg)) && (ntosValue[1]!=mb.hreg(ntosHreg+1)) )
+  {
+    ntosValue[0]=mb.hreg(ntosHreg);
+    ntosValue[1]=mb.hreg(ntosHreg+1);
+
+    cracked_value.w[1]=ntosValue[0];
+    cracked_value.w[0]=ntosValue[1];
+    ntos = cracked_value.f;
+    ntos2res(0);
+//    req_abs_display_update = true;
+  }
+
+  if( (headingValue[0]!=mb.hreg(headingHreg)) && (headingValue[1]!=mb.hreg(headingHreg+1)) )
+  {
+    headingValue[0]=mb.hreg(headingHreg);
+    headingValue[1]=mb.hreg(headingHreg+1);
+
+    cracked_value.w[1]=headingValue[0];
+    cracked_value.w[0]=headingValue[1];
+    heading = cracked_value.f;
+    heading2res(0);
+//    req_abs_display_update = true;
+  }
+
   if(req_abs_display_update == true)
   {
     // overwrite display menu absolute value
@@ -1206,8 +1307,6 @@ void loop()
     display.println(buf);
     req_abs_display_update == false;
   }
-
-
 
 }
 // only ISRs are active on second core,

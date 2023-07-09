@@ -192,6 +192,69 @@ Commads in form "fin 30 [cr]" to set fine output pair to represent angle of 30 d
  * Press of Encoder button resets absolute position value
  * disabled: (When changing from auto to manual the encoder value is updated to allow fine control.)
 
+#### Modbus USB data read / write
+
+##### Write absolute value
+
+```
+david@I7MINT:~/Documents/Ferranti_PMD$ mbpoll -m rtu -b115200 -a10 -t4   /dev/ttyACM0 1234
+mbpoll 1.4-12 - FieldTalk(tm) Modbus(R) Master Simulator
+Copyright © 2015-2019 Pascal JEAN, https://github.com/epsilonrt/mbpoll
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions; type 'mbpoll -w' for details.
+
+Protocol configuration: Modbus RTU
+Slave configuration...: address = [10]
+                        start reference = 1, count = 1
+Communication.........: /dev/ttyACM0,     115200-8E1 
+                        t/o 1.00 s, poll rate 1000 ms
+Data type.............: 16-bit register, output (holding) register table
+
+Written 1 references.
+```
+
+##### Read absolute value
+
+```
+david@I7MINT:~/Documents/Ferranti_PMD$ mbpoll -1 -m rtu -b115200 -a10 -t4   /dev/ttyACM0 
+mbpoll 1.4-12 - FieldTalk(tm) Modbus(R) Master Simulator
+Copyright © 2015-2019 Pascal JEAN, https://github.com/epsilonrt/mbpoll
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions; type 'mbpoll -w' for details.
+
+Protocol configuration: Modbus RTU
+Slave configuration...: address = [10]
+                        start reference = 1, count = 1
+Communication.........: /dev/ttyACM0,     115200-8E1 
+                        t/o 1.00 s, poll rate 1000 ms
+Data type.............: 16-bit register, output (holding) register table
+
+-- Polling slave 10...
+[1]: 	1234
+```
+
+##### read modbus info
+
+```
+david@I7MINT:~/Documents/Ferranti_PMD$ mbpoll -1 -m rtu -b115200 -a10 -t4 -u  /dev/ttyACM0 
+mbpoll 1.4-12 - FieldTalk(tm) Modbus(R) Master Simulator
+Copyright © 2015-2019 Pascal JEAN, https://github.com/epsilonrt/mbpoll
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions; type 'mbpoll -w' for details.
+
+Protocol configuration: Modbus RTU
+Slave configuration...: address = 10, report slave id
+Communication.........: /dev/ttyACM0,     115200-8E1 
+                        t/o 1.00 s, poll rate 1000 ms
+Length: 14
+Id    : 0x00
+Status: On
+Data  : Ferranti_PMD
+```
+
 #### Status display with buttons
 
 ![LCD status](./images/LCD_status2.jpg)
