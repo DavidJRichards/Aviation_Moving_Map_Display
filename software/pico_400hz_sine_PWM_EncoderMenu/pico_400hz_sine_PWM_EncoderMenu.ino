@@ -54,7 +54,7 @@
 
 #include <FreeRTOS.h>
 #include <semphr.h>
-#define _USING_TWO_CORES
+#define USING_TWO_CORES
 
 //
 // Locking code
@@ -430,6 +430,7 @@ bool core0ready = false;
 volatile int step_index = 0; 
 volatile int frequency_save;
 volatile word usperiod;
+float frequency = NAN;
 
 
 // menu variables TODO use transport structure variables
@@ -546,7 +547,7 @@ void build_sintable(void)
     }
   Serial.println();
   }
-  Serial.println(dashLine);
+ Serial.println();
 #endif
 }
 
@@ -857,8 +858,13 @@ void displayUpdate(void)
   Serial.print(", Amp = ");
   Serial.println(amplitude_div);
 
+  Serial.print("Frequency = ");
+  Serial.println(frequency,1);
+
   Serial.print("Absolute = ");
   Serial.println(absolute);
+
+
 #endif
   display.println();
   display.print("Absolute = ");
@@ -892,16 +898,13 @@ void setup()
   display.setTextSize(3);
   display.println("Resolver PWM");
 
-  Serial.begin(115200);
-  while (!Serial && millis() < 5000);
-  //while ( millis() < 5000);
-  delay(100);
-  Serial.println();
+  Serial.begin();
+  while ( millis() < 2000);
 
+  Serial.println();
   Serial.println(dashLine);
-  Serial.print("Core #:");
+  Serial.print("Moving map transport exerciser, setup A, Core #:");
   Serial.println(get_core_num());
-  Serial.println("Moving map transport exerciser.");
   Serial.println(dashLine);
   
   build_sintable();
@@ -918,8 +921,6 @@ void setup()
 #ifdef USING_MCP32017
   Wire1.setSDA(MCP_SDA);
   Wire1.setSCL(MCP_SCL);
-//  Wire.setSDA(20);
-//  Wire.setSCL(21);
   Wire1.begin();
   if(!myMCP.Init()){
     Serial.println("Not connected!");
@@ -987,7 +988,7 @@ void setup()
 //  mutex_v = xSemaphoreCreateMutex(); 
 //  dumpTimerHwRegs();
 
-  Serial.println("Core0 setup finished");
+  Serial.println("setup A finished");
   core0ready = true;
 #ifndef USING_TWO_CORES
   setup0();
@@ -1060,7 +1061,7 @@ void setup1()
 #endif
 {
   delay(5000);        // dont know why this is needed as well as next line
-  while(!core0ready)  // wait for setup1 to finish ...
+  while(!core0ready)  // wait for setup A to finish ...
   {
     tight_loop_contents();
   }
@@ -1070,13 +1071,13 @@ void setup1()
         Serial.println("Mutex can not be created"); 
     } 
 */
+  Serial.println();
   Serial.println(dashLine);
-  Serial.print("Core #:");
+  Serial.print("Moving map transport exerciser, setup B, Core #:");
   Serial.println(get_core_num());
-  Serial.println("Moving map transport exerciser, setup1");
   Serial.println(dashLine);
 
-  Serial.print(F("\nStarting TimerInterrupt on ")); Serial.println(BOARD_NAME);
+  Serial.print(F("Starting TimerInterrupt on ")); Serial.println(BOARD_NAME);
   Serial.println(RPI_PICO_TIMER_INTERRUPT_VERSION);
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
 
@@ -1106,6 +1107,8 @@ void setup1()
   Serial.print("fine to medium (calc): ");
   Serial.println(ratio2);
 
+  Serial.println("setup B finished");
+
 }
 // loop -----------------------------------------------------------------------------------------
 
@@ -1113,9 +1116,8 @@ void loop()
 {
   static int refresh_time=0;
   static int old_absolute=0;
-  static float frequency;
   static int pos = 0;
-  static bool req_abs_display update = false;
+  static bool req_abs_display_update = false;
   int bits;
 
   encoder.tick(); // used by menu functions
@@ -1141,6 +1143,7 @@ void loop()
     {
       del_count = del_value;
       frequency = filter(10000000L / usperiod)/10.0;
+      if(frequency > 9999) frequency = NAN; // prints as 'inf'
     }
   }
 
@@ -1152,7 +1155,7 @@ void loop()
     {
       del_count = del_value;
       char buf[20];
-      sprintf (buf, "Frequency %4.1f", frequency);
+      sprintf (buf, "Frequency %6.1f", frequency);
       display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
       display.setCursor(20, _LCDML_FONT_H * (18));
       display.println(buf);
@@ -1172,7 +1175,7 @@ void loop()
     if(!automatic)
     {
       abs2res(autostep * pos);
-      req_abs_display update = true;
+      req_abs_display_update = true;
     }
   } // if
 
@@ -1186,13 +1189,13 @@ void loop()
     {
       del_count=del_value;
       abs2res(autostep);
-      req_abs_display update = true;
+      req_abs_display_update = true;
       //heading2res(autostep);
       //ntos2res(autostep);
     }
   }
 
-  if(req_abs_display update == true)
+  if(req_abs_display_update == true)
   {
     // overwrite display menu absolute value
     char buf[20];
@@ -1201,7 +1204,7 @@ void loop()
     display.setTextColor(_LCDML_TEXT_COLOR, _LCDML_BACKGROUND_COLOR, true);
     display.setCursor(20, _LCDML_FONT_H * (3));
     display.println(buf);
-    req_abs_display update == false;
+    req_abs_display_update == false;
   }
 
 
